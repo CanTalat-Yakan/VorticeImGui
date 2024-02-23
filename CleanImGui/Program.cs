@@ -42,10 +42,10 @@ public sealed class Program
         ImGui.Render();
         GUIRenderer.Render();
 
+        Renderer.Execute();
+
         Renderer.EndFrame();
         Renderer.Resolve();
-
-        Renderer.Execute();
 
         Renderer.Present();
         Renderer.WaitIdle();
