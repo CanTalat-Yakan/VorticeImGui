@@ -4,7 +4,7 @@ namespace Engine;
 
 public sealed class Program
 {
-    public AppWindow AppWindow {get; private set;}
+    public AppWindow AppWindow { get; private set; }
     public Renderer Renderer { get; private set; }
     public GUIRenderer GUIRenderer { get; private set; }
     public GUIInputHandler GUIInputHandler { get; private set; }
