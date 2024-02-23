@@ -32,7 +32,6 @@ unsafe public sealed partial class GUIRenderer
     private ID3D12Resource _indexBuffer;
 
     private int _vertexBufferSize = 5000, _indexBufferSize = 10000;
-    private const int _vertexConstantBufferSize = 16 * 4;
 
     public Renderer Renderer => _renderer ??= Renderer.Instance;
     private Renderer _renderer;
@@ -50,7 +49,7 @@ unsafe public sealed partial class GUIRenderer
         CreateCommandAllocator();
         CreateCommandList();
 
-        //CreateFontTextureAndSampler();
+        CreateFontTextureAndSampler();
     }
 
     public void Update(IntPtr imGuiContext, SizeI newSize)
