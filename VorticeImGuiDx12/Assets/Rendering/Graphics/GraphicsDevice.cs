@@ -9,6 +9,7 @@ using Vortice.Mathematics;
 
 using Engine.Data;
 using Engine.Helper;
+using System.Drawing;
 
 namespace Engine.Graphics;
 
@@ -261,7 +262,7 @@ public sealed partial class GraphicsDevice : IDisposable
             Height = Size.Height,
             Format = SwapChainFormat,
             Stereo = false,
-            SampleDescription = new() { Count = 1, Quality = 0 },
+            SampleDescription = SampleDescription.Default,
             BufferUsage = Usage.RenderTargetOutput,
             BufferCount = BufferCount,
             SwapEffect = SwapEffect.FlipDiscard,
