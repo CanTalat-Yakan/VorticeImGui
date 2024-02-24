@@ -50,7 +50,7 @@ public sealed class PipelineStateObject : IDisposable
         Array.Fill(graphicsPipelineStateDescription.RenderTargetFormats, description.RenderTargetFormat);
 
         if (description.BlendState == "Alpha")
-            graphicsPipelineStateDescription.BlendState = blendStateAlpha();
+            graphicsPipelineStateDescription.BlendState = new BlendDescription(Blend.SourceAlpha, Blend.InverseSourceAlpha, Blend.One, Blend.InverseSourceAlpha);
         else if (description.BlendState == "Add")
             graphicsPipelineStateDescription.BlendState = BlendDescription.Additive;
         else
@@ -80,13 +80,6 @@ public sealed class PipelineStateObject : IDisposable
         return pipelineState;
     }
 
-    BlendDescription blendStateAlpha()
-    {
-        BlendDescription blendDescription = new BlendDescription(Blend.SourceAlpha, Blend.InverseSourceAlpha, Blend.One, Blend.InverseSourceAlpha);
-
-        return blendDescription;
-    }
-
     public void Dispose()
     {
         foreach (var combine in PipelineStateObjectBundles)
@@ -107,13 +100,18 @@ public sealed class PipelineStateObjectBundle
 public struct PipelineStateObjectDescription : IEquatable<PipelineStateObjectDescription>
 {
     public int RenderTargetCount;
+
     public Format RenderTargetFormat;
     public Format DepthStencilFormat;
+
     public string BlendState;
     public int DepthBias;
     public float SlopeScaledDepthBias;
+
     public CullMode CullMode;
+
     public string InputLayout;
+
     public PrimitiveTopologyType PrimitiveTopologyType;
 
     public override bool Equals(object obj) =>
