@@ -12,7 +12,7 @@ using Engine.Graphics;
 
 namespace Engine;
 
-public class Core : IDisposable
+public class CommonContext : IDisposable
 {
     public GraphicsDevice Device = new();
     public GraphicsContext GraphicsContext = new();

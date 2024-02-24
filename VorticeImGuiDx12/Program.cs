@@ -30,7 +30,7 @@ public sealed partial class Program
 
 public sealed partial class Program
 {
-    Core _context = new();
+    CommonContext _context = new();
     GUIRenderer _imGuiRender = new();
     DateTime _current;
 

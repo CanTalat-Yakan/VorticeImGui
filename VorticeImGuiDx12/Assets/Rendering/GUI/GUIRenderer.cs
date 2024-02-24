@@ -13,7 +13,7 @@ namespace Engine.GUI
 {
     unsafe public class GUIRenderer
     {
-        public Core Context;
+        public CommonContext Context;
 
         public InputLayoutDescription InputLayoutDescription;
 
