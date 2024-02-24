@@ -7,7 +7,7 @@ using Vortice.Direct3D12.Debug;
 using Vortice.DXGI;
 using Vortice.Mathematics;
 
-namespace Engine.Rendering;
+namespace Engine.Graphics;
 
 public struct ResourceDelayDestroy
 {

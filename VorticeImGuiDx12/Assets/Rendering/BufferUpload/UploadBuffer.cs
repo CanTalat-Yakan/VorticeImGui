@@ -2,15 +2,13 @@
 
 using Vortice.Direct3D12;
 
-namespace Engine.Rendering;
+namespace Engine.Graphics;
 
 public class UploadBuffer : IDisposable
 {
     public ID3D12Resource resource;
     public int size;
 
-    public void Dispose()
-    {
+    public void Dispose() =>
         resource?.Dispose();
-    }
 }

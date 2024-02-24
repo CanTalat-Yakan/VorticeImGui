@@ -5,55 +5,57 @@ using System.Runtime.InteropServices;
 
 using Vortice.DXGI;
 
-namespace Engine.Rendering
+namespace Engine.Graphics;
+
+public class GPUUpload
 {
-    public class GPUUpload
+    public byte[] vertexData;
+    public byte[] indexData;
+    public byte[] textureData;
+
+    public string name;
+    public Format format;
+    public int stride;
+
+    public Texture2D texture2D;
+
+    public void Quad()
     {
-        public byte[] vertexData;
-        public byte[] indexData;
-        public byte[] textureData;
-
-        public string name;
-        public Format format;
-        public int stride;
-
-        public Texture2D texture2D;
-
-        public void Quad()
+        Vector4[] position =
         {
-            Vector4[] position = new Vector4[]
-            {
-                new Vector4(-1, -1, 0.0f,1),
-                new Vector4(-1, 1, 0.0f,1),
-                new Vector4(1, -1, 0.0f,1),
-                new Vector4(1, 1, 0.0f,1),
-            };
-            int[] index = new int[]
-            {
-                0,1,2,
-                2,1,3,
-            };
-            int sizeofVector4 = 16;
-            vertexData = new byte[position.Length * sizeofVector4];
-            indexData = new byte[index.Length * sizeof(int)];
-            MemoryCopy(Marshal.UnsafeAddrOfPinnedArrayElement(vertexData, 0), position, (uint)vertexData.Length);
-            MemoryCopy(Marshal.UnsafeAddrOfPinnedArrayElement(indexData, 0), index, (uint)indexData.Length);
-            stride = 16;
-            format = Format.R32_UInt;
-        }
-
-        public static unsafe void MemoryCopy<T>(IntPtr destination, T[] source, uint count)
-            where T : struct
+            new Vector4(-1, -1, 0.0f,1),
+            new Vector4(-1, 1, 0.0f,1),
+            new Vector4(1, -1, 0.0f,1),
+            new Vector4(1, 1, 0.0f,1),
+        };
+        int[] index =
         {
-            GCHandle gcHandle = GCHandle.Alloc(source, GCHandleType.Pinned);
-            Unsafe.CopyBlock((void*)destination, (void*)gcHandle.AddrOfPinnedObject(), count);
-            gcHandle.Free();
-        }
+            0,1,2,
+            2,1,3,
+        };
+        int sizeofVector4 = 16;
 
-        public static unsafe void MemoryCopy<T>(IntPtr destination, T source, uint count)
-        {
-            IntPtr sourcePtr = (IntPtr)Unsafe.AsPointer(ref source);
-            Unsafe.CopyBlock((void*)destination, (void*)sourcePtr, count);
-        }
+        vertexData = new byte[position.Length * sizeofVector4];
+        indexData = new byte[index.Length * sizeof(int)];
+
+        MemoryCopy(Marshal.UnsafeAddrOfPinnedArrayElement(vertexData, 0), position, (uint)vertexData.Length);
+        MemoryCopy(Marshal.UnsafeAddrOfPinnedArrayElement(indexData, 0), index, (uint)indexData.Length);
+
+        stride = 16;
+        format = Format.R32_UInt;
+    }
+
+    public static unsafe void MemoryCopy<T>(IntPtr destination, T[] source, uint count)
+        where T : struct
+    {
+        GCHandle gcHandle = GCHandle.Alloc(source, GCHandleType.Pinned);
+        Unsafe.CopyBlock((void*)destination, (void*)gcHandle.AddrOfPinnedObject(), count);
+        gcHandle.Free();
+    }
+
+    public static unsafe void MemoryCopy<T>(IntPtr destination, T source, uint count)
+    {
+        IntPtr sourcePtr = (IntPtr)Unsafe.AsPointer(ref source);
+        Unsafe.CopyBlock((void*)destination, (void*)sourcePtr, count);
     }
 }

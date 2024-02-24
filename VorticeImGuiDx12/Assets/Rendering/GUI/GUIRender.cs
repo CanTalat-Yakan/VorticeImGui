@@ -5,7 +5,7 @@ using ImGuiNET;
 using Vortice.Direct3D12;
 using Vortice.DXGI;
 
-using Engine.Rendering;
+using Engine.Graphics;
 
 using ImDrawIdx = System.UInt16;
 

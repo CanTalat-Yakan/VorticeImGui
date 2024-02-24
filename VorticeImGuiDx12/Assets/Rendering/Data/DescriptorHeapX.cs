@@ -2,7 +2,7 @@
 
 using Vortice.Direct3D12;
 
-namespace Engine.Rendering;
+namespace Engine.Graphics;
 
 public class DescriptorHeapX : IDisposable
 {
@@ -15,7 +15,7 @@ public class DescriptorHeapX : IDisposable
 
     public void Initialize(GraphicsDevice graphicsDevice, DescriptorHeapDescription descriptorHeapDescription)
     {
-        this.GraphicsDevice = graphicsDevice;
+        GraphicsDevice = graphicsDevice;
         AllocatedCount = 0;
         DescriptorCount = (uint)descriptorHeapDescription.DescriptorCount;
         GraphicsDevice.ThrowIfFailed(graphicsDevice.Device.CreateDescriptorHeap(descriptorHeapDescription, out Heap));

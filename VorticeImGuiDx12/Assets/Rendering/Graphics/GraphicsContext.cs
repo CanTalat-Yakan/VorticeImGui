@@ -6,7 +6,7 @@ using Vortice.Direct3D;
 using Vortice.Direct3D12;
 using Vortice.Mathematics;
 
-namespace Engine.Rendering;
+namespace Engine.Graphics;
 
 public class GraphicsContext : IDisposable
 {
@@ -94,15 +94,15 @@ public class GraphicsContext : IDisposable
         CommandList.IASetPrimitiveTopology(PrimitiveTopology.TriangleList);
 
         int c = -1;
-        foreach (var desc in mesh.UnnamedInputLayout.InputElementDescriptions)
+        foreach (var description in mesh.UnnamedInputLayout.InputElementDescriptions)
         {
-            if (desc.Slot != c)
+            if (description.Slot != c)
             {
-                if (mesh.Vertices != null && mesh.Vertices.TryGetValue(desc.SemanticName, out var vertex))
+                if (mesh.Vertices != null && mesh.Vertices.TryGetValue(description.SemanticName, out var vertex))
                 {
-                    CommandList.IASetVertexBuffers(desc.Slot, new VertexBufferView(vertex.resource.GPUVirtualAddress + (ulong)vertex.offset, vertex.sizeInByte - vertex.offset, vertex.stride));
+                    CommandList.IASetVertexBuffers(description.Slot, new VertexBufferView(vertex.resource.GPUVirtualAddress + (ulong)vertex.offset, vertex.sizeInByte - vertex.offset, vertex.stride));
                 }
-                c = desc.Slot;
+                c = description.Slot;
             }
         }
 

@@ -4,97 +4,108 @@ using System.Collections.Generic;
 using Vortice.Direct3D12;
 using Vortice.DXGI;
 
-namespace Engine.Rendering;
+namespace Engine.Graphics;
 
 public class PipelineStateObject : IDisposable
 {
     public List<PipelineStateObjectBundle> PipelineStateObjectBundle = new List<PipelineStateObjectBundle>();
 
-    public ReadOnlyMemory<byte> VertexShader;
-    public ReadOnlyMemory<byte> GeometryShader;
-    public ReadOnlyMemory<byte> PixelShader;
+    public ReadOnlyMemory<byte> vertexShader;
+    public ReadOnlyMemory<byte> geometryShader;
+    public ReadOnlyMemory<byte> pixelShader;
 
     public string Name;
 
     public PipelineStateObject(byte[] vertexShader, byte[] pixelShader)
     {
-        this.VertexShader = vertexShader;
-        this.PixelShader = pixelShader;
+        this.vertexShader = vertexShader;
+        this.pixelShader = pixelShader;
     }
 
     public PipelineStateObject(Shader vertexShader, Shader pixelShader)
     {
-        this.VertexShader = vertexShader.CompiledCode;
-        this.PixelShader = pixelShader.CompiledCode;
+        this.vertexShader = vertexShader.CompiledCode;
+        this.pixelShader = pixelShader.CompiledCode;
     }
 
-    public ID3D12PipelineState GetState(GraphicsDevice device, PipelineStateObjectDescription desc, RootSignature rootSignature, UnnamedInputLayout inputLayout)
+    public ID3D12PipelineState GetState(GraphicsDevice device, PipelineStateObjectDescription description, RootSignature rootSignature, UnnamedInputLayout inputLayout)
     {
         foreach (var psoCombind in PipelineStateObjectBundle)
         {
-            if (psoCombind.PSODescription == desc && psoCombind.RootSignature == rootSignature && psoCombind.UnnamedInputLayout == inputLayout)
+            if (psoCombind.PipelineStateObjectDescription.Equals(description)
+             && psoCombind.RootSignature.Equals(rootSignature)
+             && psoCombind.UnnamedInputLayout.Equals(inputLayout))
             {
-                if (psoCombind.PipelineState == null)
+                if (psoCombind.pipelineState is null)
                     throw new Exception("pipeline state error");
-                return psoCombind.PipelineState;
+
+                return psoCombind.pipelineState;
             }
         }
         InputLayoutDescription inputLayoutDescription = inputLayout.InputElementDescriptions;
 
-        GraphicsPipelineStateDescription graphicsPipelineStateDescription = new GraphicsPipelineStateDescription();
-        graphicsPipelineStateDescription.RootSignature = rootSignature.Resource;
-        graphicsPipelineStateDescription.VertexShader = VertexShader;
-        graphicsPipelineStateDescription.GeometryShader = GeometryShader;
-        graphicsPipelineStateDescription.PixelShader = PixelShader;
-        graphicsPipelineStateDescription.PrimitiveTopologyType = PrimitiveTopologyType.Triangle;
-        graphicsPipelineStateDescription.InputLayout = inputLayoutDescription;
-        graphicsPipelineStateDescription.DepthStencilFormat = desc.DepthStencilFormat;
-        graphicsPipelineStateDescription.RenderTargetFormats = new Format[desc.RenderTargetCount];
-        Array.Fill(graphicsPipelineStateDescription.RenderTargetFormats, desc.RenderTargetFormat);
+        GraphicsPipelineStateDescription graphicsPipelineStateDescription = new()
+        {
+            RootSignature = rootSignature.Resource,
+            VertexShader = vertexShader,
+            GeometryShader = geometryShader,
+            PixelShader = pixelShader,
+            PrimitiveTopologyType = PrimitiveTopologyType.Triangle,
+            InputLayout = inputLayoutDescription,
+            DepthStencilFormat = description.DepthStencilFormat,
+            RenderTargetFormats = new Format[description.RenderTargetCount],
+        };
+        Array.Fill(graphicsPipelineStateDescription.RenderTargetFormats, description.RenderTargetFormat);
 
-        if (desc.BlendState == "Alpha")
-            graphicsPipelineStateDescription.BlendState = BlendStateAlpha();
-        else if (desc.BlendState == "Add")
+        if (description.BlendState == "Alpha")
+            graphicsPipelineStateDescription.BlendState = blendStateAlpha();
+        else if (description.BlendState == "Add")
             graphicsPipelineStateDescription.BlendState = BlendDescription.Additive;
         else
             graphicsPipelineStateDescription.BlendState = BlendDescription.Opaque;
 
-
-        //graphicsPipelineStateDescription.DepthStencilState = new DepthStencilDescription(desc.DepthStencilFormat != Format.Unknown, desc.DepthStencilFormat != Format.Unknown);
         graphicsPipelineStateDescription.SampleMask = uint.MaxValue;
         var RasterizerState = new RasterizerDescription(CullMode.None, FillMode.Solid);
-        RasterizerState.DepthBias = desc.DepthBias;
-        RasterizerState.SlopeScaledDepthBias = desc.SlopeScaledDepthBias;
+        RasterizerState.DepthBias = description.DepthBias;
+        RasterizerState.SlopeScaledDepthBias = description.SlopeScaledDepthBias;
         graphicsPipelineStateDescription.RasterizerState = RasterizerState;
 
         var pipelineState = device.Device.CreateGraphicsPipelineState<ID3D12PipelineState>(graphicsPipelineStateDescription);
-        if (pipelineState == null)
+        if (pipelineState is null)
             throw new Exception("pipeline state error");
-        PipelineStateObjectBundle.Add(new PipelineStateObjectBundle { PSODescription = desc, PipelineState = pipelineState, RootSignature = rootSignature, UnnamedInputLayout = inputLayout });
+
+        PipelineStateObjectBundle.Add(new()
+        {
+            PipelineStateObjectDescription = description,
+            pipelineState = pipelineState,
+            RootSignature = rootSignature,
+            UnnamedInputLayout = inputLayout
+        });
+
         return pipelineState;
     }
 
-    BlendDescription BlendStateAlpha()
+    BlendDescription blendStateAlpha()
     {
         BlendDescription blendDescription = new BlendDescription(Blend.SourceAlpha, Blend.InverseSourceAlpha, Blend.One, Blend.InverseSourceAlpha);
+
         return blendDescription;
     }
 
     public void Dispose()
     {
         foreach (var combine in PipelineStateObjectBundle)
-        {
-            combine.PipelineState.Dispose();
-        }
+            combine.pipelineState.Dispose();
+
         PipelineStateObjectBundle.Clear();
     }
 }
 
 public class PipelineStateObjectBundle
 {
-    public PipelineStateObjectDescription PSODescription;
+    public PipelineStateObjectDescription PipelineStateObjectDescription;
     public RootSignature RootSignature;
-    public ID3D12PipelineState PipelineState;
+    public ID3D12PipelineState pipelineState;
     public UnnamedInputLayout UnnamedInputLayout;
 }
 
@@ -110,10 +121,8 @@ public struct PipelineStateObjectDescription : IEquatable<PipelineStateObjectDes
     public string InputLayout;
     public PrimitiveTopologyType PrimitiveTopologyType;
 
-    public override bool Equals(object obj)
-    {
-        return obj is PipelineStateObjectDescription desc && Equals(desc);
-    }
+    public override bool Equals(object obj) =>
+        obj is PipelineStateObjectDescription description && Equals(description);
 
     public bool Equals(PipelineStateObjectDescription other)
     {

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Vortice.Direct3D12;
 using Vortice.DXGI;
 
-namespace Engine.Rendering;
+namespace Engine.Graphics;
 
 public unsafe class RingUploadBuffer : UploadBuffer
 {
@@ -34,27 +34,24 @@ public unsafe class RingUploadBuffer : UploadBuffer
             AllocateIndex = 0;
             afterAllocateIndex = AllocateIndex + ((size1 + 255) & ~255);
         }
+
         unsafe
         {
             data.CopyTo(new Span<T>((CPUResourcePointer + AllocateIndex).ToPointer(), data.Length));
         }
 
-        int ofs = AllocateIndex;
+        int offset = AllocateIndex;
         AllocateIndex = afterAllocateIndex % size;
-        return ofs;
+        return offset;
     }
 
-    public void SetCBV(GraphicsContext graphicsContext, int offset, int slot)
-    {
+    public void SetCBV(GraphicsContext graphicsContext, int offset, int slot) =>
         graphicsContext.SetConstantBufferView(this, offset, slot);
-    }
-
 
     public void UploadMeshIndex(GraphicsContext context, Mesh mesh, Span<byte> index, Format indexFormat)
     {
         var graphicsDevice = context.GraphicsDevice;
         var commandList = context.CommandList;
-
 
         int uploadMark2 = Upload(index);
         if (mesh.IndexFormat != indexFormat
@@ -73,9 +70,7 @@ public unsafe class RingUploadBuffer : UploadBuffer
                 ResourceStates.CopyDest);
         }
         else
-        {
             commandList.ResourceBarrierTransition(mesh.Index, ResourceStates.GenericRead, ResourceStates.CopyDest);
-        }
 
         commandList.CopyBufferRegion(mesh.Index, 0, resource, (ulong)uploadMark2, (ulong)index.Length);
         commandList.ResourceBarrierTransition(mesh.Index, ResourceStates.CopyDest, ResourceStates.GenericRead);

@@ -9,7 +9,7 @@ using Vortice.DXGI;
 
 using Engine.GUI;
 
-namespace Engine.Rendering;
+namespace Engine.Graphics;
 
 public class Core : IDisposable
 {
