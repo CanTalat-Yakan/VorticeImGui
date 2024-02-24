@@ -8,16 +8,39 @@ using Vortice.Mathematics;
 
 namespace Engine.Graphics;
 
-public class GraphicsContext : IDisposable
+public sealed partial class GraphicsContext : IDisposable
 {
+    public ID3D12GraphicsCommandList5 CommandList;
+    public GraphicsDevice GraphicsDevice;
+
+    public RootSignature CurrentRootSignature;
+    public PipelineStateObject PipelineStateObject;
+    public PipelineStateObjectDescription PipelineStateObjectDescription;
+    public UnnamedInputLayout UnnamedInputLayout;
 
     public void Initialize(GraphicsDevice graphicsDevice)
     {
         ThrowIfFailed(graphicsDevice.Device.CreateCommandList(0, CommandListType.Direct, graphicsDevice.GetCommandAllocator(), null, out CommandList));
         CommandList.Close();
-        this.GraphicsDevice = graphicsDevice;
+
+        GraphicsDevice = graphicsDevice;
     }
 
+    private void ThrowIfFailed(Result result)
+    {
+        if (result.Failure)
+            throw new NotImplementedException();
+    }
+
+    public void Dispose()
+    {
+        CommandList?.Dispose();
+        CommandList = null;
+    }
+}
+
+public sealed partial class GraphicsContext : IDisposable
+{
     public void DrawIndexedInstanced(int indexCountPerInstance, int instanceCount, int startIndexLocation, int baseVertexLocation, int startInstanceLocation)
     {
         CommandList.SetPipelineState(PipelineStateObject.GetState(GraphicsDevice, PipelineStateObjectDescription, CurrentRootSignature, UnnamedInputLayout));
@@ -45,41 +68,46 @@ public class GraphicsContext : IDisposable
     {
         int D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING = 5768;
 
-        ShaderResourceViewDescription shaderResourceViewDescription = new ShaderResourceViewDescription();
-        shaderResourceViewDescription.ViewDimension = Vortice.Direct3D12.ShaderResourceViewDimension.Texture2D;
-        shaderResourceViewDescription.Format = texture.Format;
-        shaderResourceViewDescription.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        ShaderResourceViewDescription shaderResourceViewDescription = new()
+        {
+            ViewDimension = Vortice.Direct3D12.ShaderResourceViewDimension.Texture2D,
+            Format = texture.Format,
+            Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+        };
         shaderResourceViewDescription.Texture2D.MipLevels = texture.MipLevels;
 
         texture.StateChange(CommandList, ResourceStates.GenericRead);
-        GraphicsDevice.CBVSRVUAVHeap.GetTempHandle(out CpuDescriptorHandle cpuHandle, out GpuDescriptorHandle gpuHandle);
-        GraphicsDevice.Device.CreateShaderResourceView(texture.Resource, shaderResourceViewDescription, cpuHandle);
-        CommandList.SetGraphicsRootDescriptorTable(CurrentRootSignature.ShaderResourceView[slot], gpuHandle);
+
+        GraphicsDevice.CBVSRVUAVHeap.GetTempHandle(out CpuDescriptorHandle CPUHandle, out GpuDescriptorHandle GPUHandle);
+        GraphicsDevice.Device.CreateShaderResourceView(texture.Resource, shaderResourceViewDescription, CPUHandle);
+
+        CommandList.SetGraphicsRootDescriptorTable(CurrentRootSignature.ShaderResourceView[slot], GPUHandle);
     }
 
-    public void SetDepthStencilViewRenderTextureView(Texture2D dsv, Texture2D[] rtvs, bool clearDSV, bool clearRTV)
+    public void SetDepthStencilViewRenderTextureView(Texture2D depthStencilView, Texture2D[] renderTextureViews, bool clearDepthStencilView, bool clearRenderTextureView)
     {
-        dsv?.StateChange(CommandList, ResourceStates.DepthWrite);
-        CpuDescriptorHandle[] rtvHandles = null;
-        if (rtvs != null)
+        depthStencilView?.StateChange(CommandList, ResourceStates.DepthWrite);
+
+        CpuDescriptorHandle[] renderTextureViewHandles = null;
+        if (renderTextureViews is not null)
         {
-            rtvHandles = new CpuDescriptorHandle[rtvs.Length];
-            for (int i = 0; i < rtvs.Length; i++)
+            renderTextureViewHandles = new CpuDescriptorHandle[renderTextureViews.Length];
+            for (int i = 0; i < renderTextureViews.Length; i++)
             {
-                Texture2D rtv = rtvs[i];
-                rtv.StateChange(CommandList, ResourceStates.RenderTarget);
-                rtvHandles[i] = rtv.RenderTargetView.GetCPUDescriptorHandleForHeapStart();
+                Texture2D renderTextureView = renderTextureViews[i];
+                renderTextureView.StateChange(CommandList, ResourceStates.RenderTarget);
+                renderTextureViewHandles[i] = renderTextureView.RenderTargetView.GetCPUDescriptorHandleForHeapStart();
             }
         }
-        if (clearDSV && dsv != null)
-            CommandList.ClearDepthStencilView(dsv.DepthStencilView.GetCPUDescriptorHandleForHeapStart(), ClearFlags.Depth | ClearFlags.Stencil, 1.0f, 0);
-        if (clearRTV && rtvs != null)
-        {
-            foreach (var rtv in rtvs)
-                CommandList.ClearRenderTargetView(rtv.RenderTargetView.GetCPUDescriptorHandleForHeapStart(), new Color4());
-        }
 
-        CommandList.OMSetRenderTargets(rtvHandles, dsv.DepthStencilView.GetCPUDescriptorHandleForHeapStart());
+        if (clearDepthStencilView && depthStencilView is not null)
+            CommandList.ClearDepthStencilView(depthStencilView.DepthStencilView.GetCPUDescriptorHandleForHeapStart(), ClearFlags.Depth | ClearFlags.Stencil, 1.0f, 0);
+
+        if (clearRenderTextureView && renderTextureViews is not null)
+            foreach (var rtv in renderTextureViews)
+                CommandList.ClearRenderTargetView(rtv.RenderTargetView.GetCPUDescriptorHandleForHeapStart(), new Color4());
+
+        CommandList.OMSetRenderTargets(renderTextureViewHandles, depthStencilView.DepthStencilView.GetCPUDescriptorHandleForHeapStart());
     }
 
     public void SetRenderTargetScreen()
@@ -119,6 +147,7 @@ public class GraphicsContext : IDisposable
             ResourceDescription.Buffer((ulong)data.Length),
             ResourceStates.GenericRead);
         GraphicsDevice.DestroyResource(resourceUpload1);
+
         GraphicsDevice.DestroyResource(texture.Resource);
         texture.Resource = GraphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
             HeapProperties.DefaultHeapProperties,
@@ -127,15 +156,21 @@ public class GraphicsContext : IDisposable
             ResourceStates.CopyDest);
 
         uint bitsPerPixel = GraphicsDevice.BitsPerPixel(texture.Format);
+
         int width = texture.Width;
         int height = texture.Height;
+
+        SubresourceData subresourcedata = new()
+        {
+            Data = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0),
+            RowPitch = (IntPtr)(width * bitsPerPixel / 8),
+            SlicePitch = (IntPtr)(width * height * bitsPerPixel / 8),
+        };
+        UpdateSubresources(CommandList, texture.Resource, resourceUpload1, 0, 0, 1, [subresourcedata]);
+
         GCHandle gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned);
-        SubresourceData subresourcedata = new SubresourceData();
-        subresourcedata.Data = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0);
-        subresourcedata.RowPitch = (IntPtr)(width * bitsPerPixel / 8);
-        subresourcedata.SlicePitch = (IntPtr)(width * height * bitsPerPixel / 8);
-        UpdateSubresources(CommandList, texture.Resource, resourceUpload1, 0, 0, 1, new SubresourceData[] { subresourcedata });
         gcHandle.Free();
+
         CommandList.ResourceBarrierTransition(texture.Resource, ResourceStates.CopyDest, ResourceStates.GenericRead);
         texture.ResourceStates = ResourceStates.GenericRead;
     }
@@ -145,10 +180,10 @@ public class GraphicsContext : IDisposable
         CommandList.SetGraphicsRootConstantBufferView(CurrentRootSignature.ConstantBufferView[slot], uploadBuffer.resource.GPUVirtualAddress + (ulong)offset);
     }
 
-    public void SetPipelineState(PipelineStateObject pipelineStateObject, PipelineStateObjectDescription psoDesc)
+    public void SetPipelineState(PipelineStateObject pipelineStateObject, PipelineStateObjectDescription pipelineStateObjectDescription)
     {
-        this.PipelineStateObject = pipelineStateObject;
-        this.PipelineStateObjectDescription = psoDesc;
+        PipelineStateObject = pipelineStateObject;
+        PipelineStateObjectDescription = pipelineStateObjectDescription;
     }
 
     public void ClearRenderTarget(Texture2D texture2D)
@@ -185,83 +220,95 @@ public class GraphicsContext : IDisposable
     {
         GraphicsDevice.CommandQueue.ExecuteCommandList(CommandList);
     }
+}
 
+public sealed partial class GraphicsContext : IDisposable
+{
     private unsafe struct MemoryCopyDestination
     {
-        public void* pData;
+        public void* Data;
         public ulong RowPitch;
         public ulong SlicePitch;
     }
 
     private unsafe void MemoryCopySubresource(
-        MemoryCopyDestination* pDest,
-        SubresourceData pSrc,
-        int RowSizeInBytes,
-        int NumRows,
-        int NumSlices)
+        MemoryCopyDestination* destination,
+        SubresourceData source,
+        int rowSizeInBytes,
+        int numberOfRows,
+        int numberOfSlices)
     {
-        for (uint z = 0; z < NumSlices; ++z)
+        for (uint i = 0; i < numberOfSlices; ++i)
         {
-            byte* pDestSlice = (byte*)(pDest->pData) + pDest->SlicePitch * z;
-            byte* pSrcSlice = (byte*)(pSrc.Data) + (long)pSrc.SlicePitch * z;
-            for (int y = 0; y < NumRows; ++y)
+            byte* destinationSlice = (byte*)destination->Data + destination->SlicePitch * i;
+            byte* sourceSlice = (byte*)source.Data + source.SlicePitch * i;
+
+            for (int y = 0; y < numberOfRows; ++y)
             {
-                new Span<byte>(pSrcSlice + ((long)pSrc.RowPitch * y), RowSizeInBytes).CopyTo(new Span<byte>(pDestSlice + (long)pDest->RowPitch * y, RowSizeInBytes));
+                var sourceSpan = new Span<byte>(sourceSlice + ((long)source.RowPitch * y), rowSizeInBytes);
+                var destinationSpan = new Span<byte>(destinationSlice + (long)destination->RowPitch * y, rowSizeInBytes);
+
+                sourceSpan.CopyTo(destinationSpan);
             }
         }
     }
 
     private unsafe ulong UpdateSubresources(
-        ID3D12GraphicsCommandList pCmdList,
-        ID3D12Resource pDestinationResource,
-        ID3D12Resource pIntermediate,
-        int FirstSubresource,
-        int NumSubresources,
-        ulong RequiredSize,
-        PlacedSubresourceFootPrint[] pLayouts,
-        int[] pNumRows,
-        ulong[] pRowSizesInBytes,
-        SubresourceData[] pSrcData)
+        ID3D12GraphicsCommandList commandList,
+        ID3D12Resource destinationResource,
+        ID3D12Resource intermediate,
+        int firstSubresource,
+        int numberOfSubresources,
+        ulong requiredSize,
+        PlacedSubresourceFootPrint[] layouts,
+        int[] numberOfRows,
+        ulong[] rowSizesInBytes,
+        SubresourceData[] sourceData)
     {
-        var IntermediateDesc = pIntermediate.Description;
-        var DestinationDesc = pDestinationResource.Description;
-        if (IntermediateDesc.Dimension != ResourceDimension.Buffer ||
-            IntermediateDesc.Width < RequiredSize + pLayouts[0].Offset ||
-            (DestinationDesc.Dimension == ResourceDimension.Buffer &&
-                (FirstSubresource != 0 || NumSubresources != 1)))
-        {
+        var IntermediateDescription = intermediate.Description;
+        var DestinationDescription = destinationResource.Description;
+
+        if (IntermediateDescription.Dimension != ResourceDimension.Buffer
+         || IntermediateDescription.Width < requiredSize + layouts[0].Offset
+         || (DestinationDescription.Dimension == ResourceDimension.Buffer
+         && (firstSubresource != 0 || numberOfSubresources != 1)))
             return 0;
-        }
 
         void* pointer = null;
-        pIntermediate.Map(0, &pointer);
+        intermediate.Map(0, &pointer);
         IntPtr data1 = new IntPtr(pointer);
 
         byte* pData;
         pData = (byte*)data1;
 
-        for (uint i = 0; i < NumSubresources; ++i)
+        for (uint i = 0; i < numberOfSubresources; ++i)
         {
-            MemoryCopyDestination DestData = new MemoryCopyDestination { pData = pData + pLayouts[i].Offset, RowPitch = (ulong)pLayouts[i].Footprint.RowPitch, SlicePitch = (uint)(pLayouts[i].Footprint.RowPitch) * (uint)(pNumRows[i]) };
-            MemoryCopySubresource(&DestData, pSrcData[i], (int)(pRowSizesInBytes[i]), pNumRows[i], pLayouts[i].Footprint.Depth);
+            MemoryCopyDestination destinationData = new()
+            {
+                Data = pData + layouts[i].Offset,
+                RowPitch = (ulong)layouts[i].Footprint.RowPitch,
+                SlicePitch = (uint)(layouts[i].Footprint.RowPitch) * (uint)(numberOfRows[i])
+            };
+            MemoryCopySubresource(&destinationData, sourceData[i], (int)(rowSizesInBytes[i]), numberOfRows[i], layouts[i].Footprint.Depth);
         }
-        pIntermediate.Unmap(0, null);
+        intermediate.Unmap(0, null);
 
-        if (DestinationDesc.Dimension == ResourceDimension.Buffer)
+        if (DestinationDescription.Dimension == ResourceDimension.Buffer)
         {
-            pCmdList.CopyBufferRegion(
-                pDestinationResource, 0, pIntermediate, pLayouts[0].Offset, (ulong)pLayouts[0].Footprint.Width);
+            commandList.CopyBufferRegion(
+                destinationResource, 0, intermediate, layouts[0].Offset, (ulong)layouts[0].Footprint.Width);
         }
         else
         {
-            for (int i = 0; i < NumSubresources; ++i)
+            for (int i = 0; i < numberOfSubresources; ++i)
             {
-                TextureCopyLocation Dst = new TextureCopyLocation(pDestinationResource, i + FirstSubresource);
-                TextureCopyLocation Src = new TextureCopyLocation(pIntermediate, pLayouts[i]);
-                pCmdList.CopyTextureRegion(Dst, 0, 0, 0, Src, null);
+                TextureCopyLocation Dst = new TextureCopyLocation(destinationResource, i + firstSubresource);
+                TextureCopyLocation Src = new TextureCopyLocation(intermediate, layouts[i]);
+                commandList.CopyTextureRegion(Dst, 0, 0, 0, Src, null);
             }
         }
-        return RequiredSize;
+
+        return requiredSize;
     }
 
     private ulong UpdateSubresources(
@@ -285,27 +332,5 @@ public class GraphicsContext : IDisposable
 
         ulong Result = UpdateSubresources(pCmdList, pDestinationResource, pIntermediate, FirstSubresource, NumSubresources, RequiredSize, pLayouts, pNumRows, pRowSizesInBytes, pSrcData);
         return Result;
-    }
-
-    public ID3D12GraphicsCommandList5 CommandList;
-    public GraphicsDevice GraphicsDevice;
-
-    private void ThrowIfFailed(Result hr)
-    {
-        if (hr != Result.Ok)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public RootSignature CurrentRootSignature;
-    public PipelineStateObject PipelineStateObject;
-    public PipelineStateObjectDescription PipelineStateObjectDescription;
-    public UnnamedInputLayout UnnamedInputLayout;
-
-    public void Dispose()
-    {
-        CommandList?.Dispose();
-        CommandList = null;
     }
 }
