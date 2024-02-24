@@ -6,16 +6,17 @@ namespace Engine.GUI
     {
         public static GUIInputHandler Instance { get; private set; }
 
-        public IntPtr Hwnd;
+        public IntPtr WindowHandle;
+
         ImGuiMouseCursor lastCursor;
 
-        public GUIInputHandler(IntPtr hwnd = 0)
+        public GUIInputHandler()
         {
-            Hwnd = hwnd;
+            Instance = this;
+
+            WindowHandle = AppWindow.Win32Window.Handle;
 
             InitKeyMap();
-
-            Instance = this;
         }
 
         void InitKeyMap()
@@ -105,17 +106,17 @@ namespace Engine.GUI
             if (io.WantSetMousePos)
             {
                 var pos = new POINT((int)io.MousePos.X, (int)io.MousePos.Y);
-                User32.ClientToScreen(Hwnd, ref pos);
+                User32.ClientToScreen(WindowHandle, ref pos);
                 User32.SetCursorPos(pos.X, pos.Y);
             }
 
             //io.MousePos = new System.Numerics.Vector2(-FLT_MAX, -FLT_MAX);
 
             var foregroundWindow = User32.GetForegroundWindow();
-            if (foregroundWindow == Hwnd || User32.IsChild(foregroundWindow, Hwnd))
+            if (foregroundWindow == WindowHandle || User32.IsChild(foregroundWindow, WindowHandle))
             {
                 POINT pos;
-                if (User32.GetCursorPos(out pos) && User32.ScreenToClient(Hwnd, ref pos))
+                if (User32.GetCursorPos(out pos) && User32.ScreenToClient(WindowHandle, ref pos))
                     io.MousePos = new System.Numerics.Vector2(pos.X, pos.Y);
             }
         }
@@ -143,7 +144,7 @@ namespace Engine.GUI
                         if (msg == WindowMessage.MButtonDown || msg == WindowMessage.MButtonDoubleClick) { button = 2; }
                         if (msg == WindowMessage.XButtonDown || msg == WindowMessage.XButtonDoubleClick) { button = (GET_XBUTTON_WPARAM(wParam) == 1) ? 3 : 4; }
                         if (!ImGui.IsAnyMouseDown() && User32.GetCapture() == IntPtr.Zero)
-                            User32.SetCapture(Hwnd);
+                            User32.SetCapture(WindowHandle);
                         io.MouseDown[button] = true;
                         return false;
                     }
@@ -158,7 +159,7 @@ namespace Engine.GUI
                         if (msg == WindowMessage.MButtonUp) { button = 2; }
                         if (msg == WindowMessage.XButtonUp) { button = (GET_XBUTTON_WPARAM(wParam) == 1) ? 3 : 4; }
                         io.MouseDown[button] = false;
-                        if (!ImGui.IsAnyMouseDown() && User32.GetCapture() == Hwnd)
+                        if (!ImGui.IsAnyMouseDown() && User32.GetCapture() == WindowHandle)
                             User32.ReleaseCapture();
                         return false;
                     }

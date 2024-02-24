@@ -18,7 +18,7 @@ public sealed class Program
         AppWindow.Show();
 
         Kernel = new(config);
-        Kernel.Initialize(new CommonContext(Kernel), AppWindow.Win32Window.Handle);
+        Kernel.Initialize(new CommonContext(Kernel));
 
         AppWindow.ResizeEvent += Kernel.Context.GraphicsDevice.Resize;
 

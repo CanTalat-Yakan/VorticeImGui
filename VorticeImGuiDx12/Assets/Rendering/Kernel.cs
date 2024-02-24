@@ -33,7 +33,7 @@ public sealed class Kernel
     public Kernel(Config config) =>
         Config = config;
 
-    public void Initialize(CommonContext context, nint hwnd)
+    public void Initialize(CommonContext context)
     {
         // Set the singleton instance of the class, if it hasn't been already.
         Instance ??= this;
@@ -54,7 +54,7 @@ public sealed class Kernel
         if (Config.GUI)
         {
             GUIRenderer.Initialize();
-            GUIInputHandler = new(hwnd);
+            GUIInputHandler = new();
         }
 
         Context.GraphicsContext.Initialize(Context.GraphicsDevice);
