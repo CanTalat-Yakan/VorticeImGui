@@ -26,8 +26,8 @@ public sealed class Kernel
 
     public GUIRenderer GUIRenderer;
     public GUIInputHandler GUIInputHandler;
+    public IntPtr GUIContext;
 
-    public IntPtr ImGuiContext;
     public DateTime Current;
 
     public Kernel(Config config) =>
@@ -94,7 +94,7 @@ public sealed class Kernel
 
     public void RenderGUI()
     {
-        ImGui.SetCurrentContext(ImGuiContext);
+        ImGui.SetCurrentContext(GUIContext);
         ImGui.GetIO().DisplaySize = new Vector2(
             Context.GraphicsDevice.Size.Width, 
             Context.GraphicsDevice.Size.Height);
