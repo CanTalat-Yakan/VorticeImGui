@@ -1,8 +1,4 @@
-﻿using System;
-
-using ImGuiNET;
-
-using Engine.Interoperation;
+﻿using Engine.Interoperation;
 
 namespace Engine.GUI
 {
@@ -10,11 +6,13 @@ namespace Engine.GUI
     {
         public static GUIInputHandler Instance { get; private set; }
 
-        public IntPtr hwnd;
+        public IntPtr Hwnd;
         ImGuiMouseCursor lastCursor;
 
-        public GUIInputHandler()
+        public GUIInputHandler(IntPtr hwnd = 0)
         {
+            Hwnd = hwnd;
+
             InitKeyMap();
 
             Instance = this;
@@ -23,6 +21,29 @@ namespace Engine.GUI
         void InitKeyMap()
         {
             var io = ImGui.GetIO();
+
+            io.KeyMap[(int)ImGuiKey.Tab] = (int)VK.TAB;
+            io.KeyMap[(int)ImGuiKey.LeftArrow] = (int)VK.LEFT;
+            io.KeyMap[(int)ImGuiKey.RightArrow] = (int)VK.RIGHT;
+            io.KeyMap[(int)ImGuiKey.UpArrow] = (int)VK.UP;
+            io.KeyMap[(int)ImGuiKey.DownArrow] = (int)VK.DOWN;
+            io.KeyMap[(int)ImGuiKey.PageUp] = (int)VK.PRIOR;
+            io.KeyMap[(int)ImGuiKey.PageDown] = (int)VK.NEXT;
+            io.KeyMap[(int)ImGuiKey.Home] = (int)VK.HOME;
+            io.KeyMap[(int)ImGuiKey.End] = (int)VK.END;
+            io.KeyMap[(int)ImGuiKey.Insert] = (int)VK.INSERT;
+            io.KeyMap[(int)ImGuiKey.Delete] = (int)VK.DELETE;
+            io.KeyMap[(int)ImGuiKey.Backspace] = (int)VK.BACK;
+            io.KeyMap[(int)ImGuiKey.Space] = (int)VK.SPACE;
+            io.KeyMap[(int)ImGuiKey.Enter] = (int)VK.RETURN;
+            io.KeyMap[(int)ImGuiKey.Escape] = (int)VK.ESCAPE;
+            io.KeyMap[(int)ImGuiKey.KeypadEnter] = (int)VK.RETURN;
+            io.KeyMap[(int)ImGuiKey.A] = 'A';
+            io.KeyMap[(int)ImGuiKey.C] = 'C';
+            io.KeyMap[(int)ImGuiKey.V] = 'V';
+            io.KeyMap[(int)ImGuiKey.X] = 'X';
+            io.KeyMap[(int)ImGuiKey.Y] = 'Y';
+            io.KeyMap[(int)ImGuiKey.Z] = 'Z';
         }
 
         public void Update()
@@ -84,17 +105,17 @@ namespace Engine.GUI
             if (io.WantSetMousePos)
             {
                 var pos = new POINT((int)io.MousePos.X, (int)io.MousePos.Y);
-                User32.ClientToScreen(hwnd, ref pos);
+                User32.ClientToScreen(Hwnd, ref pos);
                 User32.SetCursorPos(pos.X, pos.Y);
             }
 
             //io.MousePos = new System.Numerics.Vector2(-FLT_MAX, -FLT_MAX);
 
             var foregroundWindow = User32.GetForegroundWindow();
-            if (foregroundWindow == hwnd || User32.IsChild(foregroundWindow, hwnd))
+            if (foregroundWindow == Hwnd || User32.IsChild(foregroundWindow, Hwnd))
             {
                 POINT pos;
-                if (User32.GetCursorPos(out pos) && User32.ScreenToClient(hwnd, ref pos))
+                if (User32.GetCursorPos(out pos) && User32.ScreenToClient(Hwnd, ref pos))
                     io.MousePos = new System.Numerics.Vector2(pos.X, pos.Y);
             }
         }
@@ -122,7 +143,7 @@ namespace Engine.GUI
                         if (msg == WindowMessage.MButtonDown || msg == WindowMessage.MButtonDoubleClick) { button = 2; }
                         if (msg == WindowMessage.XButtonDown || msg == WindowMessage.XButtonDoubleClick) { button = (GET_XBUTTON_WPARAM(wParam) == 1) ? 3 : 4; }
                         if (!ImGui.IsAnyMouseDown() && User32.GetCapture() == IntPtr.Zero)
-                            User32.SetCapture(hwnd);
+                            User32.SetCapture(Hwnd);
                         io.MouseDown[button] = true;
                         return false;
                     }
@@ -137,7 +158,7 @@ namespace Engine.GUI
                         if (msg == WindowMessage.MButtonUp) { button = 2; }
                         if (msg == WindowMessage.XButtonUp) { button = (GET_XBUTTON_WPARAM(wParam) == 1) ? 3 : 4; }
                         io.MouseDown[button] = false;
-                        if (!ImGui.IsAnyMouseDown() && User32.GetCapture() == hwnd)
+                        if (!ImGui.IsAnyMouseDown() && User32.GetCapture() == Hwnd)
                             User32.ReleaseCapture();
                         return false;
                     }

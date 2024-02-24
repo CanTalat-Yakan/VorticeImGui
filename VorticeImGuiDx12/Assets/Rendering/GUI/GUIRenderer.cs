@@ -44,8 +44,8 @@ public unsafe sealed partial class GUIRenderer
 
     public void Initialize()
     {
-        Context.ImGuiContext = ImGui.CreateContext();
-        ImGui.SetCurrentContext(Context.ImGuiContext);
+        Context.Kernel.ImGuiContext = ImGui.CreateContext();
+        ImGui.SetCurrentContext(Context.Kernel.ImGuiContext);
 
         var io = ImGui.GetIO();
         io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;

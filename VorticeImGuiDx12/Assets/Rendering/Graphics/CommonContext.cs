@@ -1,20 +1,21 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System;
 
 using Vortice.Direct3D12;
 using Vortice.DXGI;
 
-using Engine.Buffer;
-using Engine.DataTypes;
-using Engine.GUI;
 
 namespace Engine.Graphics;
 
 public sealed partial class CommonContext : IDisposable
 {
+    public bool IsRendering => GraphicsDevice.RenderTextureViewHeap is not null;
+
+    public Kernel Kernel { get; private set; }
+
     public GraphicsDevice GraphicsDevice = new();
     public GraphicsContext GraphicsContext = new();
+
     public Dictionary<string, Shader> VertexShaders = new();
     public Dictionary<string, Shader> PixelShaders = new();
     public Dictionary<string, RootSignature> RootSignatures = new();
@@ -28,8 +29,8 @@ public sealed partial class CommonContext : IDisposable
     public ConcurrentQueue<GPUUpload> UploadQueue = new();
     public RingUploadBuffer UploadBuffer = new();
 
-    public IntPtr ImGuiContext;
-    public GUIInputHandler ImGuiInputHandler;
+    public CommonContext(Kernel kernel) =>
+        Kernel = kernel;
 
     public void Dispose()
     {
