@@ -247,11 +247,11 @@ public sealed partial class GraphicsDevice : IDisposable
             Scaling = Scaling.Stretch,
             AlphaMode = AlphaMode.Ignore,
         };
-        using IDXGISwapChain1 swapChain1 = forHwnd
+        using IDXGISwapChain1 swapChain = forHwnd
             ? Factory.CreateSwapChainForHwnd(CommandQueue, AppWindow.Win32Window.Handle, swapChainDescription)
             : Factory.CreateSwapChainForComposition(CommandQueue, swapChainDescription);
 
-        SwapChain = swapChain1.QueryInterface<IDXGISwapChain3>();
+        SwapChain = swapChain.QueryInterface<IDXGISwapChain3>();
 
         CreateScreenResources();
     }
