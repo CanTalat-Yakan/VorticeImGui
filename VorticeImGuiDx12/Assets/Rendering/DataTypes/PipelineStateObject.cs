@@ -5,7 +5,7 @@ using Vortice.DXGI;
 
 namespace Engine.DataTypes;
 
-public class PipelineStateObject : IDisposable
+public sealed class PipelineStateObject : IDisposable
 {
     public List<PipelineStateObjectBundle> PipelineStateObjectBundles = new();
 
@@ -96,7 +96,7 @@ public class PipelineStateObject : IDisposable
     }
 }
 
-public class PipelineStateObjectBundle
+public sealed class PipelineStateObjectBundle
 {
     public PipelineStateObjectDescription PipelineStateObjectDescription;
     public RootSignature RootSignature;

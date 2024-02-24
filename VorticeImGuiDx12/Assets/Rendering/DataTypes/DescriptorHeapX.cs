@@ -2,7 +2,7 @@
 
 namespace Engine.DataTypes;
 
-public class DescriptorHeapX : IDisposable
+public sealed class DescriptorHeapX : IDisposable
 {
     public GraphicsDevice GraphicsDevice;
     public ID3D12DescriptorHeap Heap;

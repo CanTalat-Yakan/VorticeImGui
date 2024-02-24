@@ -1,6 +1,6 @@
 ﻿namespace Engine.Data;
 
-public class Config
+public sealed class Config
 {
     public WindowData WindowData;
 

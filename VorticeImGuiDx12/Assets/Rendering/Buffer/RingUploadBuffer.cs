@@ -14,7 +14,7 @@ public class UploadBuffer : IDisposable
         Resource?.Dispose();
 }
 
-public unsafe class RingUploadBuffer : UploadBuffer
+public unsafe sealed class RingUploadBuffer : UploadBuffer
 {
     public IntPtr CPUResourcePointer;
     public ulong GPUResourcePointer;

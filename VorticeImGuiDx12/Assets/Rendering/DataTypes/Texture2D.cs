@@ -3,7 +3,7 @@ using Vortice.DXGI;
 
 namespace Engine.DataTypes;
 
-public class Texture2D : IDisposable
+public sealed class Texture2D : IDisposable
 {
     public ID3D12Resource Resource;
     public string Name;

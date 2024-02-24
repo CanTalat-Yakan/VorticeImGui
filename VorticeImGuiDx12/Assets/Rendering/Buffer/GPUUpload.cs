@@ -2,7 +2,7 @@
 
 namespace Engine.Buffer;
 
-public class GPUUpload
+public sealed class GPUUpload
 {
     public byte[] VertexData;
     public byte[] IndexData;

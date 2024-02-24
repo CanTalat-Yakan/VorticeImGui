@@ -14,7 +14,7 @@ public enum RootSignatureParamP
     UAVTable,
 }
 
-public class RootSignature : IDisposable
+public sealed class RootSignature : IDisposable
 {
     public Dictionary<int, int> ConstantBufferView = new();
     public Dictionary<int, int> ShaderResourceView = new();

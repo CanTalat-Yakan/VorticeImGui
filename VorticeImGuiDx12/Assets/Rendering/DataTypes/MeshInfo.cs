@@ -6,7 +6,7 @@ using Vortice.Mathematics;
 
 namespace Engine.DataTypes;
 
-public class MeshInfo : IDisposable
+public sealed class MeshInfo : IDisposable
 {
     public ID3D12Resource Vertex;
     public ID3D12Resource Index;
@@ -38,7 +38,7 @@ public class MeshInfo : IDisposable
     }
 }
 
-public class VertexBuffer : IDisposable
+public sealed class VertexBuffer : IDisposable
 {
     public ID3D12Resource Resource;
 

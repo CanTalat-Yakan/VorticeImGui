@@ -7,7 +7,7 @@ using Vortice.Dxc;
 
 namespace Engine.Helper;
 
-public class ShaderIncludeHandler : CallbackBase, IDxcIncludeHandler
+public sealed class ShaderIncludeHandler : CallbackBase, IDxcIncludeHandler
 {
     private readonly Dictionary<string, SourceCodeBlob> _sourceFiles = new();
     private readonly string[] _includeDirectories;
@@ -67,7 +67,7 @@ public class ShaderIncludeHandler : CallbackBase, IDxcIncludeHandler
         return null;
     }
 
-    private class SourceCodeBlob : IDisposable
+    private sealed class SourceCodeBlob : IDisposable
     {
         internal IDxcBlob Blob => _blob;
 
