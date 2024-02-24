@@ -30,7 +30,7 @@ public unsafe class RingUploadBuffer : UploadBuffer
         void* pointer = null;
         Resource.Map(0, &pointer);
 
-        CPUResourcePointer = new nint(pointer);
+        CPUResourcePointer = new IntPtr(pointer);
         GPUResourcePointer = Resource.GPUVirtualAddress;
     }
 
