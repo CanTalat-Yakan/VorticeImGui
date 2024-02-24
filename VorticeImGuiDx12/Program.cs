@@ -49,7 +49,7 @@ public sealed partial class Program
         Context.ImGuiInputHandler.hwnd = AppWindow.Win32Window.Handle;
 
         Context.GraphicsContext.Initialize(Context.Device);
-        Context.Device.SetupSwapChain((IntPtr)AppWindow.Win32Window.Handle);
+        Context.Device.SetupSwapChain(AppWindow.Win32Window.Handle);
     }
 
     public void UpdateAndDraw()
@@ -70,7 +70,7 @@ public sealed partial class Program
         graphicsContext.SetDescriptorHeapDefault();
         graphicsContext.ScreenBeginRender();
         graphicsContext.SetRenderTargetScreen();
-        graphicsContext.ClearRenderTargetScreen(new Color4(0.25f, 0.25f, 0.25f, 1));
+        graphicsContext.ClearRenderTargetScreen(new Color4(0.15f, 0.15f, 0.15f, 1));
 
         ImGui.SetCurrentContext(Context.ImGuiContext);
 
