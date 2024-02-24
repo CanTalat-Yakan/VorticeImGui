@@ -46,14 +46,14 @@ public unsafe class RingUploadBuffer : UploadBuffer
 
     public void SetCBV(GraphicsContext graphicsContext, int offset, int slot)
     {
-        graphicsContext.SetCBV(this, offset, slot);
+        graphicsContext.SetConstantBufferView(this, offset, slot);
     }
 
 
     public void UploadMeshIndex(GraphicsContext context, Mesh mesh, Span<byte> index, Format indexFormat)
     {
-        var graphicsDevice = context.graphicsDevice;
-        var commandList = context.commandList;
+        var graphicsDevice = context.GraphicsDevice;
+        var commandList = context.CommandList;
 
 
         int uploadMark2 = Upload(index);
@@ -83,8 +83,8 @@ public unsafe class RingUploadBuffer : UploadBuffer
 
     public void UploadVertexBuffer(GraphicsContext context, ref ID3D12Resource resource1, Span<byte> vertex)
     {
-        var graphicsDevice = context.graphicsDevice;
-        var commandList = context.commandList;
+        var graphicsDevice = context.GraphicsDevice;
+        var commandList = context.CommandList;
 
         int uploadMark1 = Upload(vertex);
         graphicsDevice.DestroyResource(resource1);

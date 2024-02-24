@@ -79,7 +79,7 @@ unsafe public class GUIRender
         graphicsContext.SetRootSignature(Context.CreateRootSignatureFromString("Cssss"));
         graphicsContext.SetPipelineState(Context.PipelineStateObjects["ImGui"], psoDesc);
         Context.UploadBuffer.SetCBV(graphicsContext, index1, 0);
-        graphicsContext.commandList.IASetPrimitiveTopology(Vortice.Direct3D.PrimitiveTopology.TriangleList);
+        graphicsContext.CommandList.IASetPrimitiveTopology(Vortice.Direct3D.PrimitiveTopology.TriangleList);
 
         Vector2 clip_off = data.DisplayPos;
         for (int i = 0; i < data.CmdListsCount; i++)
@@ -105,9 +105,9 @@ unsafe public class GUIRender
                 }
                 else
                 {
-                    graphicsContext.SetSRV(Context.GetTexByStrId(cmd.TextureId), 0);
+                    graphicsContext.SetShaderResourceView(Context.GetTexByStrId(cmd.TextureId), 0);
                     var rect = new Vortice.RawRect((int)(cmd.ClipRect.X - clip_off.X), (int)(cmd.ClipRect.Y - clip_off.Y), (int)(cmd.ClipRect.Z - clip_off.X), (int)(cmd.ClipRect.W - clip_off.Y));
-                    graphicsContext.commandList.RSSetScissorRects(new[] { rect });
+                    graphicsContext.CommandList.RSSetScissorRects(new[] { rect });
 
                     graphicsContext.DrawIndexedInstanced((int)cmd.ElemCount, 1, (int)(cmd.IdxOffset), (int)(cmd.VtxOffset), 0);
                 }

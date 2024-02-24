@@ -4,7 +4,6 @@ using ImGuiNET;
 using Vortice.Mathematics;
 
 using Engine.GUI;
-using Engine.Rendering;
 
 namespace Engine;
 
