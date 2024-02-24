@@ -1,4 +1,4 @@
-# VorticeImGui12
+# Vortice ImGui DirectX12
 
 [VorticeImGui](https://github.com/YaakovDavis/VorticeImGui)
 
