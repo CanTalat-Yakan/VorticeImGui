@@ -3,7 +3,6 @@
 using ImGuiNET;
 using Vortice.Mathematics;
 
-using Engine.Graphics;
 using Engine.GUI;
 
 namespace Engine;
@@ -24,59 +23,70 @@ public sealed partial class Program
         Initialize();
 
         AppWindow.Looping(UpdateAndDraw);
-        AppWindow.Dispose(_context.Dispose);
+        AppWindow.Dispose(Context.Dispose);
     }
 }
 
 public sealed partial class Program
 {
-    CommonContext _context = new();
-    GUIRenderer _imGuiRender = new();
+    public CommonContext Context { get; private set; } = new();
+    public GUIRenderer ImGuiRender { get; private set; } = new();
+
     DateTime _current;
 
     public void Initialize()
     {
-        _imGuiRender.Context = _context;
-        _context.LoadDefaultResource();
+        ImGuiRender.Context = Context;
 
-        _context.Device.Initialize();
-        _context.UploadBuffer.Initialize(_context.Device, 67108864);//64 MB
+        Context.LoadDefaultResource();
 
-        _imGuiRender.Initialization();
-        _context.ImGuiInputHandler = new GUIInputHandler();
-        _context.ImGuiInputHandler.hwnd = AppWindow.Win32Window.Handle;
+        Context.Device.Initialize();
+        Context.UploadBuffer.Initialize(Context.Device, 67108864);//64 MB
 
-        _context.GraphicsContext.Initialize(_context.Device);
-        _context.Device.SetupSwapChain((IntPtr)AppWindow.Win32Window.Handle);
+        ImGuiRender.Initialize();
+        
+        Context.ImGuiInputHandler = new GUIInputHandler();
+        Context.ImGuiInputHandler.hwnd = AppWindow.Win32Window.Handle;
+
+        Context.GraphicsContext.Initialize(Context.Device);
+        Context.Device.SetupSwapChain((IntPtr)AppWindow.Win32Window.Handle);
     }
 
     public void UpdateAndDraw()
     {
-        if (AppWindow.Win32Window.Width != _context.Device.Width || AppWindow.Win32Window.Height != _context.Device.Height)
+        if (AppWindow.Win32Window.Width != Context.Device.Width || AppWindow.Win32Window.Height != Context.Device.Height)
         {
-            _context.Device.Resize(AppWindow.Win32Window.Width, AppWindow.Win32Window.Height);
-            ImGui.GetIO().DisplaySize = new System.Numerics.Vector2(_context.Device.Width, _context.Device.Height);
+            Context.Device.Resize(AppWindow.Win32Window.Width, AppWindow.Win32Window.Height);
+            ImGui.GetIO().DisplaySize = new System.Numerics.Vector2(Context.Device.Width, Context.Device.Height);
         }
 
-        var graphicsContext = _context.GraphicsContext;
-        _context.Device.Begin();
+        Context.Device.Begin();
+
+        var graphicsContext = Context.GraphicsContext;
         graphicsContext.BeginCommand();
-        _context.GPUUploadData(graphicsContext);
+
+        Context.GPUUploadData(graphicsContext);
+
         graphicsContext.SetDescriptorHeapDefault();
         graphicsContext.ScreenBeginRender();
         graphicsContext.SetRenderTargetScreen();
-        graphicsContext.ClearRenderTargetScreen(new Color4(0.5f, 0.5f, 1, 1));
+        graphicsContext.ClearRenderTargetScreen(new Color4(0.25f, 0.25f, 0.25f, 1));
 
-        ImGui.SetCurrentContext(_context.ImGuiContext);
+        ImGui.SetCurrentContext(Context.ImGuiContext);
+
         var previous = _current;
         _current = DateTime.Now;
         float delta = (float)(_current - previous).TotalSeconds;
         ImGui.GetIO().DeltaTime = delta;
-        _context.ImGuiInputHandler.Update();
-        _imGuiRender.Render();
+
+        Context.ImGuiInputHandler.Update();
+
+        ImGuiRender.Render();
+
         graphicsContext.ScreenEndRender();
         graphicsContext.EndCommand();
         graphicsContext.Execute();
-        _context.Device.Present(true);
+
+        Context.Device.Present(true);
     }
 }

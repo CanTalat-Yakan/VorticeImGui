@@ -30,7 +30,7 @@ namespace Engine.GUI
             BlendState = "Alpha",
         };
 
-        public void Initialization()
+        public void Initialize()
         {
             Context.ImGuiContext = ImGui.CreateContext();
             ImGui.SetCurrentContext(Context.ImGuiContext);
