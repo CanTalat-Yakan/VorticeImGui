@@ -270,7 +270,7 @@ public sealed partial class GraphicsDevice : IDisposable
 
 public sealed partial class GraphicsDevice : IDisposable
 {
-    public void CreateRootSignature(RootSignature rootSignature, IList<RootSignatureParamP> types)
+    public void CreateRootSignature(RootSignature rootSignature, IList<RootSignatureParameters> types)
     {
         // Static Samplers.
         var samplerDescription = new StaticSamplerDescription[4];
@@ -307,52 +307,50 @@ public sealed partial class GraphicsDevice : IDisposable
 
         samplerDescription[3].Filter = Filter.MinMagMipPoint;
 
-        RootParameter1[] rootParameters = new RootParameter1[types.Count];
+        var rootParameters = new RootParameter1[types.Count];
 
-        int cbvCount = 0;
-        int srvCount = 0;
-        int uavCount = 0;
+        int constantBufferViewCount = 0;
+        int shaderResourceViewCount = 0;
+        int unorderedAccessViewCount = 0;
+
         rootSignature.ConstantBufferView.Clear();
         rootSignature.ShaderResourceView.Clear();
         rootSignature.UnorderedAccessView.Clear();
 
         for (int i = 0; i < types.Count; i++)
-        {
-            RootSignatureParamP t = types[i];
-            switch (t)
+            switch (types[i])
             {
-                case RootSignatureParamP.CBV:
-                    rootParameters[i] = new RootParameter1(RootParameterType.ConstantBufferView, new RootDescriptor1(cbvCount, 0), ShaderVisibility.All);
-                    rootSignature.ConstantBufferView[cbvCount] = i;
-                    cbvCount++;
+                case RootSignatureParameters.ConstantBufferView:
+                    rootParameters[i] = new RootParameter1(RootParameterType.ConstantBufferView, new RootDescriptor1(constantBufferViewCount, 0), ShaderVisibility.All);
+                    rootSignature.ConstantBufferView[constantBufferViewCount] = i;
+                    constantBufferViewCount++;
                     break;
-                case RootSignatureParamP.SRV:
-                    rootParameters[i] = new RootParameter1(RootParameterType.ShaderResourceView, new RootDescriptor1(srvCount, 0), ShaderVisibility.All);
-                    rootSignature.ShaderResourceView[srvCount] = i;
-                    srvCount++;
+                case RootSignatureParameters.ConstantBufferViewTable:
+                    rootParameters[i] = new RootParameter1(new RootDescriptorTable1(new DescriptorRange1(DescriptorRangeType.ConstantBufferView, 1, constantBufferViewCount)), ShaderVisibility.All);
+                    rootSignature.ConstantBufferView[constantBufferViewCount] = i;
+                    constantBufferViewCount++;
                     break;
-                case RootSignatureParamP.UAV:
-                    rootParameters[i] = new RootParameter1(RootParameterType.UnorderedAccessView, new RootDescriptor1(uavCount, 0), ShaderVisibility.All);
-                    rootSignature.UnorderedAccessView[uavCount] = i;
-                    uavCount++;
+                case RootSignatureParameters.ShaderResourceView:
+                    rootParameters[i] = new RootParameter1(RootParameterType.ShaderResourceView, new RootDescriptor1(shaderResourceViewCount, 0), ShaderVisibility.All);
+                    rootSignature.ShaderResourceView[shaderResourceViewCount] = i;
+                    shaderResourceViewCount++;
                     break;
-                case RootSignatureParamP.CBVTable:
-                    rootParameters[i] = new RootParameter1(new RootDescriptorTable1(new DescriptorRange1(DescriptorRangeType.ConstantBufferView, 1, cbvCount)), ShaderVisibility.All);
-                    rootSignature.ConstantBufferView[cbvCount] = i;
-                    cbvCount++;
+                case RootSignatureParameters.ShaderResourceViewTable:
+                    rootParameters[i] = new RootParameter1(new RootDescriptorTable1(new DescriptorRange1(DescriptorRangeType.ShaderResourceView, 1, shaderResourceViewCount)), ShaderVisibility.All);
+                    rootSignature.ShaderResourceView[shaderResourceViewCount] = i;
+                    shaderResourceViewCount++;
                     break;
-                case RootSignatureParamP.SRVTable:
-                    rootParameters[i] = new RootParameter1(new RootDescriptorTable1(new DescriptorRange1(DescriptorRangeType.ShaderResourceView, 1, srvCount)), ShaderVisibility.All);
-                    rootSignature.ShaderResourceView[srvCount] = i;
-                    srvCount++;
+                case RootSignatureParameters.UnorderedAccessView:
+                    rootParameters[i] = new RootParameter1(RootParameterType.UnorderedAccessView, new RootDescriptor1(unorderedAccessViewCount, 0), ShaderVisibility.All);
+                    rootSignature.UnorderedAccessView[unorderedAccessViewCount] = i;
+                    unorderedAccessViewCount++;
                     break;
-                case RootSignatureParamP.UAVTable:
-                    rootParameters[i] = new RootParameter1(new RootDescriptorTable1(new DescriptorRange1(DescriptorRangeType.UnorderedAccessView, 1, uavCount)), ShaderVisibility.All);
-                    rootSignature.UnorderedAccessView[uavCount] = i;
-                    uavCount++;
+                case RootSignatureParameters.UnorderedAccessViewTable:
+                    rootParameters[i] = new RootParameter1(new RootDescriptorTable1(new DescriptorRange1(DescriptorRangeType.UnorderedAccessView, 1, unorderedAccessViewCount)), ShaderVisibility.All);
+                    rootSignature.UnorderedAccessView[unorderedAccessViewCount] = i;
+                    unorderedAccessViewCount++;
                     break;
             }
-        }
 
         RootSignatureDescription1 rootSignatureDescription = new()
         {

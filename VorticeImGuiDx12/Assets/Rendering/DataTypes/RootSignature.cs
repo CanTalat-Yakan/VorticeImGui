@@ -4,14 +4,14 @@ using Vortice.Direct3D12;
 
 namespace Engine.DataTypes;
 
-public enum RootSignatureParamP
+public enum RootSignatureParameters
 {
-    CBV,
-    SRV,
-    UAV,
-    CBVTable,
-    SRVTable,
-    UAVTable,
+    ConstantBufferView,
+    ConstantBufferViewTable,
+    ShaderResourceView,
+    ShaderResourceViewTable,
+    UnorderedAccessView,
+    UnorderedAccessViewTable,
 }
 
 public sealed class RootSignature : IDisposable

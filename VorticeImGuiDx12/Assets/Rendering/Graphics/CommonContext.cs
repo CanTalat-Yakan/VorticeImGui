@@ -105,7 +105,7 @@ public sealed partial class CommonContext : IDisposable
 
         rootSignature = new RootSignature();
         RootSignatures[s] = rootSignature;
-        RootSignatureParamP[] description = new RootSignatureParamP[s.Length];
+        RootSignatureParameters[] description = new RootSignatureParameters[s.Length];
 
         for (int i = 0; i < s.Length; i++)
         {
@@ -113,22 +113,22 @@ public sealed partial class CommonContext : IDisposable
             switch (c)
             {
                 case 'C':
-                    description[i] = RootSignatureParamP.CBV;
+                    description[i] = RootSignatureParameters.ConstantBufferView;
                     break;
                 case 'c':
-                    description[i] = RootSignatureParamP.CBVTable;
+                    description[i] = RootSignatureParameters.ConstantBufferViewTable;
                     break;
                 case 'S':
-                    description[i] = RootSignatureParamP.SRV;
+                    description[i] = RootSignatureParameters.ShaderResourceView;
                     break;
                 case 's':
-                    description[i] = RootSignatureParamP.SRVTable;
+                    description[i] = RootSignatureParameters.ShaderResourceViewTable;
                     break;
                 case 'U':
-                    description[i] = RootSignatureParamP.UAV;
+                    description[i] = RootSignatureParameters.UnorderedAccessView;
                     break;
                 case 'u':
-                    description[i] = RootSignatureParamP.UAVTable;
+                    description[i] = RootSignatureParameters.UnorderedAccessViewTable;
                     break;
                 default:
                     throw new NotImplementedException("error root signature desc.");
