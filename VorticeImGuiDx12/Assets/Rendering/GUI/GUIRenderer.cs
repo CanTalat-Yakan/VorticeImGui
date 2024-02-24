@@ -56,7 +56,9 @@ namespace Engine.GUI
             gpuUpload.texture2D = FontTexture;
             gpuUpload.format = Format.R8G8B8A8_UNorm;
             gpuUpload.textureData = new byte[width * height * bytesPerPixel];
-            new Span<byte>(pixels, gpuUpload.textureData.Length).CopyTo(gpuUpload.textureData);
+
+            Span<byte> data = new(pixels, gpuUpload.textureData.Length);
+            data.CopyTo(gpuUpload.textureData);
 
             Context.UploadQueue.Enqueue(gpuUpload);
         }
