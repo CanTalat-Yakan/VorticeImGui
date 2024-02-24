@@ -1,9 +1,11 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 
-using Vortice.Win32;
+using Engine.Interoperation;
 
-using static Vortice.Win32.Kernel32;
-using static Vortice.Win32.User32;
+using static Engine.Interoperation.Kernel32;
+using static Engine.Interoperation.User32;
+using Engine.GUI;
 
 namespace Engine;
 
@@ -98,6 +100,9 @@ public sealed partial class AppWindow
 
     public static bool ProcessMessage(uint msg, UIntPtr wParam, IntPtr lParam)
     {
+        if (GUIInputHandler.Instance?.ProcessMessage((WindowMessage)msg, wParam, lParam) ?? false)
+            return true;
+
         switch ((WindowMessage)msg)
         {
             case WindowMessage.Size:

@@ -1,11 +1,10 @@
-﻿// Copyright (c) Amer Koleci and contributors.
-// Distributed under the MIT license. See the LICENSE file in the project root for more information.
+﻿using System;
 
 using Win32.Numerics;
 
-using Vortice.Win32;
+using Engine.Interoperation;
 
-using static Vortice.Win32.User32;
+using static Engine.Interoperation.User32;
 
 namespace Engine;
 
