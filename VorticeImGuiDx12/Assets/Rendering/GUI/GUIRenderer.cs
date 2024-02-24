@@ -77,7 +77,6 @@ public unsafe sealed partial class GUIRenderer
 
     public void Render()
     {
-        ImGui.NewFrame();
         ImGui.ShowDemoWindow();
         ImGui.Render();
 
