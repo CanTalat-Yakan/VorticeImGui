@@ -57,6 +57,8 @@ public sealed partial class GraphicsDevice : IDisposable
 
     public void Initialize(bool forHwnd)
     {
+        NativeSize = new(AppWindow.Win32Window.Width, AppWindow.Win32Window.Height);
+
         CreateDevice();
         CreateGraphicsQueue();
         CreateDescriptorHeaps();

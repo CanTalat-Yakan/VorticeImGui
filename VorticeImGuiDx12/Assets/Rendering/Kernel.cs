@@ -33,7 +33,7 @@ public sealed class Kernel
     public Kernel(Config config) =>
         Config = config;
 
-    public void Initialize(CommonContext context, nint hwnd, string assetsPath = null)
+    public void Initialize(CommonContext context, nint hwnd)
     {
         // Set the singleton instance of the class, if it hasn't been already.
         Instance ??= this;
@@ -62,8 +62,8 @@ public sealed class Kernel
 
     public void Frame()
     {
-        //if (!Context.IsRendering)
-        //    return;
+        if (!Context.IsRendering)
+            return;
 
         OnInitialize?.Invoke();
         OnInitialize = null;
