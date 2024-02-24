@@ -45,7 +45,6 @@ public sealed partial class Program
 
         Context.LoadDefaultResource();
 
-        Context.GraphicsDevice = new(AppWindow.Win32Window);
         Context.GraphicsDevice.Initialize(true);
         Context.UploadBuffer.Initialize(Context.GraphicsDevice, 67108864);//64 MB
 

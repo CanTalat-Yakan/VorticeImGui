@@ -14,7 +14,7 @@ namespace Engine;
 
 public class CommonContext : IDisposable
 {
-    public GraphicsDevice GraphicsDevice;
+    public GraphicsDevice GraphicsDevice = new();
     public GraphicsContext GraphicsContext = new();
     public Dictionary<string, Shader> VertexShaders = new();
     public Dictionary<string, Shader> PixelShaders = new();
