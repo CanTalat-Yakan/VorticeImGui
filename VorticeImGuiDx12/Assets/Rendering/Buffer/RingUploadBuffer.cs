@@ -4,7 +4,10 @@ using System.Runtime.InteropServices;
 using Vortice.Direct3D12;
 using Vortice.DXGI;
 
-namespace Engine.Graphics;
+using Engine.DataTypes;
+using Engine.Graphics;
+
+namespace Engine.Buffer;
 
 public class UploadBuffer : IDisposable
 {

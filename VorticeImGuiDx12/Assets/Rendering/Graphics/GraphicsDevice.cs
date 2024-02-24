@@ -7,7 +7,9 @@ using Vortice.Direct3D12.Debug;
 using Vortice.DXGI;
 using Vortice.Mathematics;
 
+using Engine.Buffer;
 using Engine.Data;
+using Engine.DataTypes;
 using Engine.Helper;
 
 namespace Engine.Graphics;

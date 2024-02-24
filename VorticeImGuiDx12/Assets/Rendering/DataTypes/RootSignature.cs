@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using Vortice.Direct3D12;
 
-namespace Engine.Graphics;
+namespace Engine.DataTypes;
 
 public enum RootSignatureParamP
 {

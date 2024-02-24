@@ -3,7 +3,9 @@ using System;
 
 using Vortice.Direct3D12;
 
-namespace Engine.Graphics;
+using Engine.Graphics;
+
+namespace Engine.DataTypes;
 
 public class DescriptorHeapX : IDisposable
 {

@@ -5,6 +5,8 @@ using Vortice.Direct3D;
 using Vortice.Direct3D12;
 using Vortice.Mathematics;
 
+using Engine.Buffer;
+using Engine.DataTypes;
 using Engine.Helper;
 
 namespace Engine.Graphics;

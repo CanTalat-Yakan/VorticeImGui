@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using Vortice.Direct3D12;
 using Vortice.DXGI;
 
-namespace Engine.Graphics;
+using Engine.Graphics;
+
+namespace Engine.DataTypes;
 
 public class PipelineStateObject : IDisposable
 {

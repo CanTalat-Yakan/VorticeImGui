@@ -3,7 +3,7 @@ using System.Linq;
 
 using Vortice.Direct3D12;
 
-namespace Engine.Graphics;
+namespace Engine.DataTypes;
 
 public class UnnamedInputLayout : IEquatable<UnnamedInputLayout>
 {

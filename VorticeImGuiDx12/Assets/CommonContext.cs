@@ -7,6 +7,8 @@ using Vortice.Direct3D12;
 using Vortice.Dxc;
 using Vortice.DXGI;
 
+using Engine.Buffer;
+using Engine.DataTypes;
 using Engine.GUI;
 using Engine.Graphics;
 
