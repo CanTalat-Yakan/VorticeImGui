@@ -1,8 +1,8 @@
 ﻿using Vortice.Direct3D12;
+using Vortice.Dxc;
 using Vortice.DXGI;
 
 using ImDrawIdx = System.UInt16;
-using Vortice.Dxc;
 
 namespace Engine.GUI;
 
@@ -13,7 +13,7 @@ public unsafe sealed partial class GUIRenderer
     public InputLayoutDescription InputLayoutDescription;
 
     public Texture2D FontTexture;
-    public Mesh ImGuiMesh;
+    public Mesh GUIMesh;
 
     public PipelineStateObjectDescription PipelineStateObjectDescription = new()
     {
@@ -29,8 +29,8 @@ public unsafe sealed partial class GUIRenderer
     {
         string directoryPath = AppContext.BaseDirectory + @"Assets\Resources\Shaders\";
 
-        Context.VertexShaders["ImGui"] = new Shader() { CompiledCode = Context.GraphicsContext.LoadShader(DxcShaderStage.Vertex, directoryPath + "ImGui.hlsl", "VS"), Name = "ImGui VS" };
-        Context.PixelShaders["ImGui"] = new Shader() { CompiledCode = Context.GraphicsContext.LoadShader(DxcShaderStage.Pixel, directoryPath + "ImGui.hlsl", "PS"), Name = "ImGui PS" };
+        Context.VertexShaders["ImGui"] = Context.GraphicsContext.LoadShader(DxcShaderStage.Vertex, directoryPath + "ImGui.hlsl", "VS");
+        Context.PixelShaders["ImGui"] = Context.GraphicsContext.LoadShader(DxcShaderStage.Pixel, directoryPath + "ImGui.hlsl", "PS");
         Context.PipelineStateObjects["ImGui"] = new PipelineStateObject(Context.VertexShaders["ImGui"], Context.PixelShaders["ImGui"]); ;
     }
 
@@ -40,7 +40,7 @@ public unsafe sealed partial class GUIRenderer
         ImGui.SetCurrentContext(Context.Kernel.GUIContext);
 
         var io = ImGui.GetIO();
-        io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
+        io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset; // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
         FontTexture = new Texture2D();
         Context.RenderTargets["ImGui Font"] = FontTexture;
@@ -54,7 +54,7 @@ public unsafe sealed partial class GUIRenderer
         FontTexture.Height = height;
         FontTexture.MipLevels = 1;
         FontTexture.Format = Format.R8G8B8A8_UNorm;
-        ImGuiMesh = Context.GetMesh("ImGui Mesh");
+        GUIMesh = Context.GetMesh("ImGui Mesh");
 
         GPUUpload gpuUpload = new GPUUpload();
         gpuUpload.texture2D = FontTexture;
@@ -70,10 +70,21 @@ public unsafe sealed partial class GUIRenderer
     public void Render()
     {
         ImGui.ShowDemoWindow();
+
         ImGui.Render();
 
+        RenderImDrawData();
+    }
+
+    private void RenderImDrawData()
+    {
         var data = ImGui.GetDrawData();
         var graphicsContext = Context.GraphicsContext;
+
+        graphicsContext.SetRootSignature(Context.CreateRootSignatureFromString("Cs"));
+        graphicsContext.SetPipelineState(Context.PipelineStateObjects["ImGui"], PipelineStateObjectDescription);
+
+        graphicsContext.CommandList.IASetPrimitiveTopology(Vortice.Direct3D.PrimitiveTopology.TriangleList);
 
         float L = data.DisplayPos.X;
         float R = data.DisplayPos.X + data.DisplaySize.X;
@@ -86,11 +97,8 @@ public unsafe sealed partial class GUIRenderer
             0.0f,         0.0f,           0.5f,       0.0f,
             (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f,
         };
-        int index1 = Context.UploadBuffer.Upload<float>(mvp);
-        graphicsContext.SetRootSignature(Context.CreateRootSignatureFromString("Cssss"));
-        graphicsContext.SetPipelineState(Context.PipelineStateObjects["ImGui"], PipelineStateObjectDescription);
-        Context.UploadBuffer.SetConstantBufferView(graphicsContext, index1, 0);
-        graphicsContext.CommandList.IASetPrimitiveTopology(Vortice.Direct3D.PrimitiveTopology.TriangleList);
+        int index = Context.UploadBuffer.Upload<float>(mvp);
+        Context.UploadBuffer.SetConstantBufferView(graphicsContext, index, 0);
 
         Vector2 clipOffset = data.DisplayPos;
         for (int i = 0; i < data.CmdListsCount; i++)
@@ -100,14 +108,14 @@ public unsafe sealed partial class GUIRenderer
             var vertexBytes = commandList.VtxBuffer.Size * sizeof(ImDrawVert);
             var indexBytes = commandList.IdxBuffer.Size * sizeof(ImDrawIdx);
 
-            Context.UploadBuffer.UploadMeshIndex(graphicsContext, ImGuiMesh, new Span<byte>(commandList.IdxBuffer.Data.ToPointer(), indexBytes), Format.R16_UInt);
-            Context.UploadBuffer.UploadVertexBuffer(graphicsContext, ref ImGuiMesh.Vertex, new Span<byte>(commandList.VtxBuffer.Data.ToPointer(), vertexBytes));
+            Context.UploadBuffer.UploadMeshIndex(graphicsContext, GUIMesh, new Span<byte>(commandList.IdxBuffer.Data.ToPointer(), indexBytes), Format.R16_UInt);
+            Context.UploadBuffer.UploadVertexBuffer(graphicsContext, ref GUIMesh.Vertex, new Span<byte>(commandList.VtxBuffer.Data.ToPointer(), vertexBytes));
 
-            ImGuiMesh.Vertices["POSITION"] = new VertexBuffer() { offset = 0, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
-            ImGuiMesh.Vertices["TEXCOORD"] = new VertexBuffer() { offset = 8, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
-            ImGuiMesh.Vertices["COLOR"] = new VertexBuffer() { offset = 16, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
+            GUIMesh.Vertices["POSITION"] = new VertexBuffer() { offset = 0, resource = GUIMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
+            GUIMesh.Vertices["TEXCOORD"] = new VertexBuffer() { offset = 8, resource = GUIMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
+            GUIMesh.Vertices["COLOR"] = new VertexBuffer() { offset = 16, resource = GUIMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
 
-            graphicsContext.SetMesh(ImGuiMesh);
+            graphicsContext.SetMesh(GUIMesh);
 
             for (int j = 0; j < commandList.CmdBuffer.Size; j++)
             {

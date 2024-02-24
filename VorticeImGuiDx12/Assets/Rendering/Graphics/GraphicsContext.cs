@@ -19,7 +19,7 @@ public sealed partial class GraphicsContext : IDisposable
     public PipelineStateObject PipelineStateObject;
     public PipelineStateObjectDescription PipelineStateObjectDescription;
 
-    public UnnamedInputLayout UnnamedInputLayout;
+    public InputLayoutDescription InputLayoutDescription;
 
     public void Initialize(GraphicsDevice graphicsDevice)
     {
@@ -40,7 +40,7 @@ public sealed partial class GraphicsContext : IDisposable
 {
     public void DrawIndexedInstanced(int indexCountPerInstance, int instanceCount, int startIndexLocation, int baseVertexLocation, int startInstanceLocation)
     {
-        CommandList.SetPipelineState(PipelineStateObject.GetState(GraphicsDevice, PipelineStateObjectDescription, CurrentRootSignature, UnnamedInputLayout));
+        CommandList.SetPipelineState(PipelineStateObject.GetState(GraphicsDevice, PipelineStateObjectDescription, CurrentRootSignature, InputLayoutDescription));
         CommandList.DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
     }
 
@@ -199,22 +199,20 @@ public sealed partial class GraphicsContext : IDisposable
     {
         CommandList.IASetPrimitiveTopology(PrimitiveTopology.TriangleList);
 
-        int c = -1;
-        foreach (var description in mesh.UnnamedInputLayout.InputElementDescriptions)
-        {
-            if (description.Slot != c)
+        int previousInputSlot = -1;
+        foreach (var inputElementDescription in mesh.InputLayoutDescription.Elements)
+            if (inputElementDescription.Slot != previousInputSlot)
             {
-                if (mesh.Vertices != null && mesh.Vertices.TryGetValue(description.SemanticName, out var vertex))
-                {
-                    CommandList.IASetVertexBuffers(description.Slot, new VertexBufferView(vertex.resource.GPUVirtualAddress + (ulong)vertex.offset, vertex.sizeInByte - vertex.offset, vertex.stride));
-                }
-                c = description.Slot;
+                if (mesh.Vertices?.TryGetValue(inputElementDescription.SemanticName, out var vertex) ?? false)
+                    CommandList.IASetVertexBuffers(inputElementDescription.Slot, new VertexBufferView(vertex.resource.GPUVirtualAddress + (ulong)vertex.offset, vertex.sizeInByte - vertex.offset, vertex.stride));
+
+                previousInputSlot = inputElementDescription.Slot;
             }
-        }
 
         if (mesh.Index is not null)
             CommandList.IASetIndexBuffer(new IndexBufferView(mesh.Index.GPUVirtualAddress, mesh.IndexSizeInByte, mesh.IndexFormat));
-        UnnamedInputLayout = mesh.UnnamedInputLayout;
+
+        InputLayoutDescription = mesh.InputLayoutDescription;
     }
 
     public void SetConstantBufferView(UploadBuffer uploadBuffer, int offset, int slot)

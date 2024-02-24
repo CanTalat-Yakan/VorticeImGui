@@ -7,50 +7,43 @@ namespace Engine.DataTypes;
 
 public class PipelineStateObject : IDisposable
 {
-    public List<PipelineStateObjectBundle> PipelineStateObjectBundle = new List<PipelineStateObjectBundle>();
+    public List<PipelineStateObjectBundle> PipelineStateObjectBundles = new List<PipelineStateObjectBundle>();
 
-    public ReadOnlyMemory<byte> vertexShader;
-    public ReadOnlyMemory<byte> geometryShader;
-    public ReadOnlyMemory<byte> pixelShader;
+    public ReadOnlyMemory<byte> VertexShader;
+    public ReadOnlyMemory<byte> GeometryShader;
+    public ReadOnlyMemory<byte> PixelShader;
 
     public string Name;
 
-    public PipelineStateObject(byte[] vertexShader, byte[] pixelShader)
+    public PipelineStateObject(ReadOnlyMemory<byte> vertexShader, ReadOnlyMemory<byte> pixelShader)
     {
-        this.vertexShader = vertexShader;
-        this.pixelShader = pixelShader;
+        VertexShader = vertexShader;
+        PixelShader = pixelShader;
     }
 
-    public PipelineStateObject(Shader vertexShader, Shader pixelShader)
+    public ID3D12PipelineState GetState(GraphicsDevice device, PipelineStateObjectDescription description, RootSignature rootSignature, InputLayoutDescription inputLayout)
     {
-        this.vertexShader = vertexShader.CompiledCode;
-        this.pixelShader = pixelShader.CompiledCode;
-    }
-
-    public ID3D12PipelineState GetState(GraphicsDevice device, PipelineStateObjectDescription description, RootSignature rootSignature, UnnamedInputLayout inputLayout)
-    {
-        foreach (var psoCombind in PipelineStateObjectBundle)
+        foreach (var bundle in PipelineStateObjectBundles)
         {
-            if (psoCombind.PipelineStateObjectDescription.Equals(description)
-             && psoCombind.RootSignature.Equals(rootSignature)
-             && psoCombind.UnnamedInputLayout.Equals(inputLayout))
+            if (bundle.PipelineStateObjectDescription.Equals(description)
+             && bundle.RootSignature.Equals(rootSignature)
+             && bundle.InputLayout.Equals(inputLayout))
             {
-                if (psoCombind.pipelineState is null)
+                if (bundle.pipelineState is null)
                     throw new Exception("pipeline state error");
 
-                return psoCombind.pipelineState;
+                return bundle.pipelineState;
             }
         }
-        InputLayoutDescription inputLayoutDescription = inputLayout.InputElementDescriptions;
 
         GraphicsPipelineStateDescription graphicsPipelineStateDescription = new()
         {
             RootSignature = rootSignature.Resource,
-            VertexShader = vertexShader,
-            GeometryShader = geometryShader,
-            PixelShader = pixelShader,
+            VertexShader = VertexShader,
+            GeometryShader = GeometryShader,
+            PixelShader = PixelShader,
             PrimitiveTopologyType = PrimitiveTopologyType.Triangle,
-            InputLayout = inputLayoutDescription,
+            InputLayout = inputLayout,
             DepthStencilFormat = description.DepthStencilFormat,
             RenderTargetFormats = new Format[description.RenderTargetCount],
         };
@@ -64,21 +57,24 @@ public class PipelineStateObject : IDisposable
             graphicsPipelineStateDescription.BlendState = BlendDescription.Opaque;
 
         graphicsPipelineStateDescription.SampleMask = uint.MaxValue;
-        var RasterizerState = new RasterizerDescription(CullMode.None, FillMode.Solid);
-        RasterizerState.DepthBias = description.DepthBias;
-        RasterizerState.SlopeScaledDepthBias = description.SlopeScaledDepthBias;
-        graphicsPipelineStateDescription.RasterizerState = RasterizerState;
+
+        RasterizerDescription rasterizerState = new(CullMode.None, FillMode.Solid)
+        {
+            DepthBias = description.DepthBias,
+            SlopeScaledDepthBias = description.SlopeScaledDepthBias,
+        };
+        graphicsPipelineStateDescription.RasterizerState = rasterizerState;
 
         var pipelineState = device.Device.CreateGraphicsPipelineState<ID3D12PipelineState>(graphicsPipelineStateDescription);
         if (pipelineState is null)
             throw new Exception("pipeline state error");
 
-        PipelineStateObjectBundle.Add(new()
+        PipelineStateObjectBundles.Add(new()
         {
             PipelineStateObjectDescription = description,
             pipelineState = pipelineState,
             RootSignature = rootSignature,
-            UnnamedInputLayout = inputLayout
+            InputLayout = inputLayout
         });
 
         return pipelineState;
@@ -93,10 +89,10 @@ public class PipelineStateObject : IDisposable
 
     public void Dispose()
     {
-        foreach (var combine in PipelineStateObjectBundle)
+        foreach (var combine in PipelineStateObjectBundles)
             combine.pipelineState.Dispose();
 
-        PipelineStateObjectBundle.Clear();
+        PipelineStateObjectBundles.Clear();
     }
 }
 
@@ -105,7 +101,7 @@ public class PipelineStateObjectBundle
     public PipelineStateObjectDescription PipelineStateObjectDescription;
     public RootSignature RootSignature;
     public ID3D12PipelineState pipelineState;
-    public UnnamedInputLayout UnnamedInputLayout;
+    public InputLayoutDescription InputLayout;
 }
 
 public struct PipelineStateObjectDescription : IEquatable<PipelineStateObjectDescription>
@@ -148,16 +144,13 @@ public struct PipelineStateObjectDescription : IEquatable<PipelineStateObjectDes
         hash.Add(CullMode);
         hash.Add(InputLayout);
         hash.Add(PrimitiveTopologyType);
+
         return hash.ToHashCode();
     }
 
-    public static bool operator ==(PipelineStateObjectDescription x, PipelineStateObjectDescription y)
-    {
-        return x.Equals(y);
-    }
+    public static bool operator ==(PipelineStateObjectDescription x, PipelineStateObjectDescription y) =>
+        x.Equals(y);
 
-    public static bool operator !=(PipelineStateObjectDescription x, PipelineStateObjectDescription y)
-    {
-        return !(x == y);
-    }
+    public static bool operator !=(PipelineStateObjectDescription x, PipelineStateObjectDescription y) =>
+        !(x == y);
 }

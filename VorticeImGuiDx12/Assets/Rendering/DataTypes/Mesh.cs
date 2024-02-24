@@ -10,7 +10,7 @@ public class Mesh : IDisposable
     public ID3D12Resource Vertex;
     public ID3D12Resource Index;
 
-    public UnnamedInputLayout UnnamedInputLayout;
+    public InputLayoutDescription InputLayoutDescription;
 
     public Dictionary<string, VertexBuffer> Vertices = new();
 

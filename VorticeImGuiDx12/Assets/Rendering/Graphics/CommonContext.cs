@@ -15,8 +15,8 @@ public sealed partial class CommonContext : IDisposable
     public GraphicsDevice GraphicsDevice = new();
     public GraphicsContext GraphicsContext = new();
 
-    public Dictionary<string, Shader> VertexShaders = new();
-    public Dictionary<string, Shader> PixelShaders = new();
+    public Dictionary<string, ReadOnlyMemory<byte>> VertexShaders = new();
+    public Dictionary<string, ReadOnlyMemory<byte>> PixelShaders = new();
     public Dictionary<string, RootSignature> RootSignatures = new();
     public Dictionary<string, Mesh> Meshes = new();
     public Dictionary<string, Texture2D> RenderTargets = new();
@@ -82,16 +82,12 @@ public sealed partial class CommonContext : IDisposable
             return mesh;
         else
         {
-            mesh = new Mesh();
-            mesh.UnnamedInputLayout = new UnnamedInputLayout()
-            {
-                InputElementDescriptions =
-                [
-                    new InputElementDescription("POSITION", 0, Format.R32G32_Float, 0),
-                    new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float, 1),
-                    new InputElementDescription("COLOR", 0, Format.R8G8B8A8_UNorm, 2)
-                ]
-            };
+            mesh = new();
+            mesh.InputLayoutDescription = new(
+                new InputElementDescription("POSITION", 0, Format.R32G32_Float, 0),
+                new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float, 1),
+                new InputElementDescription("COLOR", 0, Format.R8G8B8A8_UNorm, 2));
+
             Meshes[name] = mesh;
 
             return mesh;
