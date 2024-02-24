@@ -26,25 +26,25 @@ public class DescriptorHeapX : IDisposable
         IncrementSize = (uint)graphicsDevice.Device.GetDescriptorHandleIncrementSize(descriptorHeapDescription.Type);
     }
 
-    public void GetTempHandle(out CpuDescriptorHandle cpuHandle, out GpuDescriptorHandle gpuHandle)
+    public void GetTempHandle(out CpuDescriptorHandle handleCPU, out GpuDescriptorHandle handleGPU)
     {
-        CpuDescriptorHandle cpuHandle1 = Heap.GetCPUDescriptorHandleForHeapStart();
-        cpuHandle1.Ptr += AllocatedCount * IncrementSize;
-        GpuDescriptorHandle gpuHandle1 = Heap.GetGPUDescriptorHandleForHeapStart();
-        gpuHandle1.Ptr += AllocatedCount * IncrementSize;
+        handleCPU = Heap.GetCPUDescriptorHandleForHeapStart();
+        handleCPU.Ptr += AllocatedCount * IncrementSize;
+
+        handleGPU = Heap.GetGPUDescriptorHandleForHeapStart();
+        handleGPU.Ptr += AllocatedCount * IncrementSize;
 
         AllocatedCount = (AllocatedCount + 1) % DescriptorCount;
-        cpuHandle = cpuHandle1;
-        gpuHandle = gpuHandle1;
     }
 
     public CpuDescriptorHandle GetTempCpuHandle()
     {
-        CpuDescriptorHandle cpuHandle1 = Heap.GetCPUDescriptorHandleForHeapStart();
-        cpuHandle1.Ptr += AllocatedCount * IncrementSize;
+        CpuDescriptorHandle handle = Heap.GetCPUDescriptorHandleForHeapStart();
+        handle.Ptr += AllocatedCount * IncrementSize;
 
         AllocatedCount = (AllocatedCount + 1) % DescriptorCount;
-        return cpuHandle1;
+
+        return handle;
     }
 
     public void Dispose()
