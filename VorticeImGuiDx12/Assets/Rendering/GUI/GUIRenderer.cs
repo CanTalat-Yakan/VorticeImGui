@@ -84,7 +84,7 @@ namespace Engine.GUI
             int index1 = Context.UploadBuffer.Upload<float>(mvp);
             graphicsContext.SetRootSignature(Context.CreateRootSignatureFromString("Cssss"));
             graphicsContext.SetPipelineState(Context.PipelineStateObjects["ImGui"], PipelineStateObjectDescription);
-            Context.UploadBuffer.SetCBV(graphicsContext, index1, 0);
+            Context.UploadBuffer.SetConstantBufferView(graphicsContext, index1, 0);
             graphicsContext.CommandList.IASetPrimitiveTopology(Vortice.Direct3D.PrimitiveTopology.TriangleList);
 
             Vector2 clipOffset = data.DisplayPos;

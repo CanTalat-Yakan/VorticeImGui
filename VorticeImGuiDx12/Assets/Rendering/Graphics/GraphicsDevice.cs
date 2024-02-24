@@ -497,14 +497,14 @@ public class GraphicsDevice : IDisposable
 
     public void CreateUploadBuffer(UploadBuffer uploadBuffer, int size)
     {
-        DestroyResource(uploadBuffer.resource);
+        DestroyResource(uploadBuffer.Resource);
 
-        uploadBuffer.resource = Device.CreateCommittedResource<ID3D12Resource>(
+        uploadBuffer.Resource = Device.CreateCommittedResource<ID3D12Resource>(
             HeapProperties.UploadHeapProperties,
             HeapFlags.None,
             ResourceDescription.Buffer(new ResourceAllocationInfo((ulong)size, 0)),
             ResourceStates.GenericRead);
-        uploadBuffer.size = size;
+        uploadBuffer.Size = size;
     }
 
     public void DestroyResource(ID3D12Object resource)

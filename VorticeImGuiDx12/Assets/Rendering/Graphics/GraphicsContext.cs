@@ -177,7 +177,7 @@ public sealed partial class GraphicsContext : IDisposable
 
     public void SetConstantBufferView(UploadBuffer uploadBuffer, int offset, int slot)
     {
-        CommandList.SetGraphicsRootConstantBufferView(CurrentRootSignature.ConstantBufferView[slot], uploadBuffer.resource.GPUVirtualAddress + (ulong)offset);
+        CommandList.SetGraphicsRootConstantBufferView(CurrentRootSignature.ConstantBufferView[slot], uploadBuffer.Resource.GPUVirtualAddress + (ulong)offset);
     }
 
     public void SetPipelineState(PipelineStateObject pipelineStateObject, PipelineStateObjectDescription pipelineStateObjectDescription)
