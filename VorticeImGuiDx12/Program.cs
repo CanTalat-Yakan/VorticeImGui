@@ -20,6 +20,8 @@ public sealed class Program
         Kernel = new(config);
         Kernel.Initialize(new CommonContext(Kernel), AppWindow.Win32Window.Handle);
 
+        AppWindow.ResizeEvent += Kernel.Context.GraphicsDevice.Resize;
+
         AppWindow.Looping(Kernel.Frame);
         AppWindow.Dispose(Kernel.Dispose);
     }
