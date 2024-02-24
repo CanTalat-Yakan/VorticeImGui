@@ -90,23 +90,23 @@ namespace Engine.GUI
             Vector2 clipOffset = data.DisplayPos;
             for (int i = 0; i < data.CmdListsCount; i++)
             {
-                var cmdList = data.CmdListsRange[i];
+                var commandList = data.CmdListsRange[i];
 
-                var vertBytes = cmdList.VtxBuffer.Size * sizeof(ImDrawVert);
-                var indexBytes = cmdList.IdxBuffer.Size * sizeof(ImDrawIdx);
+                var vertexBytes = commandList.VtxBuffer.Size * sizeof(ImDrawVert);
+                var indexBytes = commandList.IdxBuffer.Size * sizeof(ImDrawIdx);
 
-                Context.UploadBuffer.UploadMeshIndex(graphicsContext, ImGuiMesh, new Span<byte>(cmdList.IdxBuffer.Data.ToPointer(), indexBytes), Format.R16_UInt);
-                Context.UploadBuffer.UploadVertexBuffer(graphicsContext, ref ImGuiMesh.Vertex, new Span<byte>(cmdList.VtxBuffer.Data.ToPointer(), vertBytes));
+                Context.UploadBuffer.UploadMeshIndex(graphicsContext, ImGuiMesh, new Span<byte>(commandList.IdxBuffer.Data.ToPointer(), indexBytes), Format.R16_UInt);
+                Context.UploadBuffer.UploadVertexBuffer(graphicsContext, ref ImGuiMesh.Vertex, new Span<byte>(commandList.VtxBuffer.Data.ToPointer(), vertexBytes));
 
-                ImGuiMesh.Vertices["POSITION"] = new VertexBuffer() { offset = 0, resource = ImGuiMesh.Vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
-                ImGuiMesh.Vertices["TEXCOORD"] = new VertexBuffer() { offset = 8, resource = ImGuiMesh.Vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
-                ImGuiMesh.Vertices["COLOR"] = new VertexBuffer() { offset = 16, resource = ImGuiMesh.Vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
+                ImGuiMesh.Vertices["POSITION"] = new VertexBuffer() { offset = 0, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
+                ImGuiMesh.Vertices["TEXCOORD"] = new VertexBuffer() { offset = 8, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
+                ImGuiMesh.Vertices["COLOR"] = new VertexBuffer() { offset = 16, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
 
                 graphicsContext.SetMesh(ImGuiMesh);
 
-                for (int j = 0; j < cmdList.CmdBuffer.Size; j++)
+                for (int j = 0; j < commandList.CmdBuffer.Size; j++)
                 {
-                    var cmd = cmdList.CmdBuffer[j];
+                    var cmd = commandList.CmdBuffer[j];
 
                     if (cmd.UserCallback != IntPtr.Zero)
                         throw new NotImplementedException("user callbacks not implemented");

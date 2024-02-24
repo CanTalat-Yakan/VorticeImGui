@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-using SharpGen.Runtime;
 using Vortice.Direct3D;
 using Vortice.Direct3D12;
 using Vortice.Mathematics;
+
+using Engine.Helper;
 
 namespace Engine.Graphics;
 
@@ -20,16 +21,10 @@ public sealed partial class GraphicsContext : IDisposable
 
     public void Initialize(GraphicsDevice graphicsDevice)
     {
-        ThrowIfFailed(graphicsDevice.Device.CreateCommandList(0, CommandListType.Direct, graphicsDevice.GetCommandAllocator(), null, out CommandList));
-        CommandList.Close();
-
         GraphicsDevice = graphicsDevice;
-    }
 
-    private void ThrowIfFailed(Result result)
-    {
-        if (result.Failure)
-            throw new NotImplementedException();
+        GraphicsDevice.Device.CreateCommandList(0, CommandListType.Direct, graphicsDevice.GetCommandAllocator(), null, out CommandList).ThrowIfFailed();
+        CommandList.Close();
     }
 
     public void Dispose()
@@ -134,7 +129,7 @@ public sealed partial class GraphicsContext : IDisposable
             }
         }
 
-        if (mesh.Index != null)
+        if (mesh.Index is not null)
             CommandList.IASetIndexBuffer(new IndexBufferView(mesh.Index.GPUVirtualAddress, mesh.IndexSizeInByte, mesh.IndexFormat));
         UnnamedInputLayout = mesh.UnnamedInputLayout;
     }
@@ -245,8 +240,8 @@ public sealed partial class GraphicsContext : IDisposable
 
             for (int y = 0; y < numberOfRows; ++y)
             {
-                var sourceSpan = new Span<byte>(sourceSlice + ((long)source.RowPitch * y), rowSizeInBytes);
-                var destinationSpan = new Span<byte>(destinationSlice + (long)destination->RowPitch * y, rowSizeInBytes);
+                Span<byte> sourceSpan = new(sourceSlice + ((long)source.RowPitch * y), rowSizeInBytes);
+                Span<byte> destinationSpan = new(destinationSlice + (long)destination->RowPitch * y, rowSizeInBytes);
 
                 sourceSpan.CopyTo(destinationSpan);
             }
@@ -265,27 +260,24 @@ public sealed partial class GraphicsContext : IDisposable
         ulong[] rowSizesInBytes,
         SubresourceData[] sourceData)
     {
-        var IntermediateDescription = intermediate.Description;
-        var DestinationDescription = destinationResource.Description;
+        var intermediateDescription = intermediate.Description;
+        var destinationDescription = destinationResource.Description;
 
-        if (IntermediateDescription.Dimension != ResourceDimension.Buffer
-         || IntermediateDescription.Width < requiredSize + layouts[0].Offset
-         || (DestinationDescription.Dimension == ResourceDimension.Buffer
+        if (intermediateDescription.Dimension != ResourceDimension.Buffer
+         || intermediateDescription.Width < requiredSize + layouts[0].Offset
+         || (destinationDescription.Dimension == ResourceDimension.Buffer
          && (firstSubresource != 0 || numberOfSubresources != 1)))
             return 0;
 
         void* pointer = null;
         intermediate.Map(0, &pointer);
-        IntPtr data1 = new IntPtr(pointer);
-
-        byte* pData;
-        pData = (byte*)data1;
+        byte* data = (byte*)new IntPtr(pointer);
 
         for (uint i = 0; i < numberOfSubresources; ++i)
         {
             MemoryCopyDestination destinationData = new()
             {
-                Data = pData + layouts[i].Offset,
+                Data = data + layouts[i].Offset,
                 RowPitch = (ulong)layouts[i].Footprint.RowPitch,
                 SlicePitch = (uint)(layouts[i].Footprint.RowPitch) * (uint)(numberOfRows[i])
             };
@@ -293,18 +285,17 @@ public sealed partial class GraphicsContext : IDisposable
         }
         intermediate.Unmap(0, null);
 
-        if (DestinationDescription.Dimension == ResourceDimension.Buffer)
+        if (destinationDescription.Dimension.Equals(ResourceDimension.Buffer))
         {
-            commandList.CopyBufferRegion(
-                destinationResource, 0, intermediate, layouts[0].Offset, (ulong)layouts[0].Footprint.Width);
+            commandList.CopyBufferRegion(destinationResource, 0, intermediate, layouts[0].Offset, (ulong)layouts[0].Footprint.Width);
         }
         else
         {
             for (int i = 0; i < numberOfSubresources; ++i)
             {
-                TextureCopyLocation Dst = new TextureCopyLocation(destinationResource, i + firstSubresource);
-                TextureCopyLocation Src = new TextureCopyLocation(intermediate, layouts[i]);
-                commandList.CopyTextureRegion(Dst, 0, 0, 0, Src, null);
+                TextureCopyLocation destination = new(destinationResource, i + firstSubresource);
+                TextureCopyLocation source = new(intermediate, layouts[i]);
+                commandList.CopyTextureRegion(destination, 0, 0, 0, source, null);
             }
         }
 
@@ -312,25 +303,23 @@ public sealed partial class GraphicsContext : IDisposable
     }
 
     private ulong UpdateSubresources(
-        ID3D12GraphicsCommandList pCmdList,
-        ID3D12Resource pDestinationResource,
-        ID3D12Resource pIntermediate,
-        ulong IntermediateOffset,
-        int FirstSubresource,
-        int NumSubresources,
-        SubresourceData[] pSrcData)
+        ID3D12GraphicsCommandList commandList,
+        ID3D12Resource destinationResource,
+        ID3D12Resource intermediate,
+        ulong intermediateOffset,
+        int firstSubresource,
+        int numSubresources,
+        SubresourceData[] sourceData)
     {
-        PlacedSubresourceFootPrint[] pLayouts = new PlacedSubresourceFootPrint[NumSubresources];
-        ulong[] pRowSizesInBytes = new ulong[NumSubresources];
-        int[] pNumRows = new int[NumSubresources];
+        PlacedSubresourceFootPrint[] layouts = new PlacedSubresourceFootPrint[numSubresources];
+        ulong[] rowSizesInBytes = new ulong[numSubresources];
+        int[] numRows = new int[numSubresources];
 
-        var Desc = pDestinationResource.Description;
-        ID3D12Device pDevice = null;
-        pDestinationResource.GetDevice(out pDevice);
-        pDevice.GetCopyableFootprints(Desc, (int)FirstSubresource, (int)NumSubresources, IntermediateOffset, pLayouts, pNumRows, pRowSizesInBytes, out ulong RequiredSize);
-        pDevice.Release();
+        destinationResource.GetDevice(out ID3D12Device device);
+        device.GetCopyableFootprints(destinationResource.Description, firstSubresource, numSubresources, intermediateOffset, layouts, numRows, rowSizesInBytes, out ulong RequiredSize);
+        device.Release();
 
-        ulong Result = UpdateSubresources(pCmdList, pDestinationResource, pIntermediate, FirstSubresource, NumSubresources, RequiredSize, pLayouts, pNumRows, pRowSizesInBytes, pSrcData);
+        ulong Result = UpdateSubresources(commandList, destinationResource, intermediate, firstSubresource, numSubresources, RequiredSize, layouts, numRows, rowSizesInBytes, sourceData);
         return Result;
     }
 }
