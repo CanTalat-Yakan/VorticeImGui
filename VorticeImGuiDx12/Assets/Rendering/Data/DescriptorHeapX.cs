@@ -31,7 +31,7 @@ public class DescriptorHeapX : IDisposable
         CpuDescriptorHandle cpuHandle1 = Heap.GetCPUDescriptorHandleForHeapStart();
         cpuHandle1.Ptr += AllocatedCount * IncrementSize;
         GpuDescriptorHandle gpuHandle1 = Heap.GetGPUDescriptorHandleForHeapStart();
-        gpuHandle1.Ptr += (ulong)(AllocatedCount * IncrementSize);
+        gpuHandle1.Ptr += AllocatedCount * IncrementSize;
 
         AllocatedCount = (AllocatedCount + 1) % DescriptorCount;
         cpuHandle = cpuHandle1;
