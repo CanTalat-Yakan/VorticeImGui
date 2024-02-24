@@ -1,6 +1,4 @@
-﻿using System;
-
-using SharpGen.Runtime;
+﻿using SharpGen.Runtime;
 
 namespace Engine.Helper;
 

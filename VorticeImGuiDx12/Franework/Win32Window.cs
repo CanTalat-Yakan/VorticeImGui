@@ -1,11 +1,8 @@
-﻿using System;
-
-using Win32.Numerics;
+﻿using Win32.Numerics;
 
 using Engine.Interoperation;
 
 using static Engine.Interoperation.User32;
-using Engine.Interoperation;
 
 namespace Engine;
 

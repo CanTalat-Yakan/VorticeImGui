@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 
 using Vortice.Direct3D12;
 using Vortice.Direct3D12.Debug;
 using Vortice.DXGI;
 using Vortice.Mathematics;
-
-using Engine.Buffer;
-using Engine.Data;
-using Engine.DataTypes;
-using Engine.Helper;
 
 namespace Engine.Graphics;
 

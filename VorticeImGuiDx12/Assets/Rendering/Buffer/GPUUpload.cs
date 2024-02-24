@@ -1,7 +1,5 @@
 ﻿using Vortice.DXGI;
 
-using Engine.DataTypes;
-
 namespace Engine.Buffer;
 
 public class GPUUpload

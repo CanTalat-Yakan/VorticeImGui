@@ -1,6 +1,4 @@
-﻿using System;
-
-using Vortice.Direct3D12;
+﻿using Vortice.Direct3D12;
 using Vortice.DXGI;
 
 namespace Engine.DataTypes;

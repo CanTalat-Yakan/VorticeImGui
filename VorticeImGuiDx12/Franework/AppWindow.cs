@@ -1,12 +1,9 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 using Engine.Interoperation;
 
 using static Engine.Interoperation.Kernel32;
 using static Engine.Interoperation.User32;
-using Engine.GUI;
-using Engine.Data;
 
 namespace Engine;
 

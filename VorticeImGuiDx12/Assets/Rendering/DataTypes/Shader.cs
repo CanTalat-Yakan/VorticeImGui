@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Engine.DataTypes;
+﻿namespace Engine.DataTypes;
 
 public class Shader
 {

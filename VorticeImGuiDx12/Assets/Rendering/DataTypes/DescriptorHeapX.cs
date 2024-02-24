@@ -1,9 +1,4 @@
-﻿using Engine.Helper;
-using System;
-
-using Vortice.Direct3D12;
-
-using Engine.Graphics;
+﻿using Vortice.Direct3D12;
 
 namespace Engine.DataTypes;
 

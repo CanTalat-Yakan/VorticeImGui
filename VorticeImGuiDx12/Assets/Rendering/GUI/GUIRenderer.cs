@@ -1,13 +1,5 @@
-﻿using System.Numerics;
-using System;
-
-using ImGuiNET;
-using Vortice.Direct3D12;
+﻿using Vortice.Direct3D12;
 using Vortice.DXGI;
-
-using Engine.Buffer;
-using Engine.DataTypes;
-using Engine.Graphics;
 
 using ImDrawIdx = System.UInt16;
 using Vortice.Dxc;
