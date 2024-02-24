@@ -90,10 +90,10 @@ public unsafe sealed partial class GUIRenderer
         float B = data.DisplayPos.Y + data.DisplaySize.Y;
         float[] mvp =
         {
-                2.0f/(R-L),   0.0f,           0.0f,       0.0f,
-                0.0f,         2.0f/(T-B),     0.0f,       0.0f,
-                0.0f,         0.0f,           0.5f,       0.0f,
-                (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f,
+            2.0f/(R-L),   0.0f,           0.0f,       0.0f,
+            0.0f,         2.0f/(T-B),     0.0f,       0.0f,
+            0.0f,         0.0f,           0.5f,       0.0f,
+            (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f,
         };
         int index1 = Context.UploadBuffer.Upload<float>(mvp);
         graphicsContext.SetRootSignature(Context.CreateRootSignatureFromString("Cssss"));
