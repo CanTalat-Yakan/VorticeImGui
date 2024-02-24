@@ -25,7 +25,7 @@ public unsafe class RingUploadBuffer : UploadBuffer
 
     public void Initialize(GraphicsDevice device, int size)
     {
-        this.Size = size;
+        Size = size;
         device.CreateUploadBuffer(this, size);
 
         void* pointer = null;
@@ -89,7 +89,7 @@ public unsafe class RingUploadBuffer : UploadBuffer
         var graphicsDevice = context.GraphicsDevice;
         var commandList = context.CommandList;
 
-        int uploadMark1 = Upload(vertex);
+        int uploadOffset = Upload(vertex);
         graphicsDevice.DestroyResource(resource);
         resource = graphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
             HeapProperties.DefaultHeapProperties,
@@ -97,7 +97,7 @@ public unsafe class RingUploadBuffer : UploadBuffer
             ResourceDescription.Buffer((ulong)vertex.Length),
             ResourceStates.CopyDest);
 
-        commandList.CopyBufferRegion(resource, 0, Resource, (ulong)uploadMark1, (ulong)vertex.Length);
+        commandList.CopyBufferRegion(resource, 0, Resource, (ulong)uploadOffset, (ulong)vertex.Length);
         commandList.ResourceBarrierTransition(resource, ResourceStates.CopyDest, ResourceStates.GenericRead);
     }
 }
