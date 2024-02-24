@@ -204,7 +204,7 @@ public sealed partial class GraphicsContext : IDisposable
             if (inputElementDescription.Slot != previousInputSlot)
             {
                 if (mesh.Vertices?.TryGetValue(inputElementDescription.SemanticName, out var vertex) ?? false)
-                    CommandList.IASetVertexBuffers(inputElementDescription.Slot, new VertexBufferView(vertex.resource.GPUVirtualAddress + (ulong)vertex.offset, vertex.sizeInByte - vertex.offset, vertex.stride));
+                    CommandList.IASetVertexBuffers(inputElementDescription.Slot, new VertexBufferView(vertex.Resource.GPUVirtualAddress + (ulong)vertex.Offset, vertex.SizeInByte - vertex.Offset, vertex.Stride));
 
                 previousInputSlot = inputElementDescription.Slot;
             }

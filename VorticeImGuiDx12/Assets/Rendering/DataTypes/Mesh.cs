@@ -22,28 +22,30 @@ public class Mesh : IDisposable
 
     public void Dispose()
     {
+        Index?.Dispose();
+        Index = null;
+
         Vertex?.Dispose();
         Vertex = null;
+
         if (Vertices is not null)
             foreach (var pair in Vertices)
                 pair.Value.Dispose();
         Vertices?.Clear();
-        Index?.Dispose();
-        Index = null;
     }
 }
 
 public class VertexBuffer : IDisposable
 {
-    public ID3D12Resource resource;
+    public ID3D12Resource Resource;
 
-    public int offset;
-    public int sizeInByte;
-    public int stride;
+    public int Offset;
+    public int SizeInByte;
+    public int Stride;
 
     public void Dispose()
     {
-        if (offset == 0)
-            resource.Dispose();
+        if (Offset == 0)
+            Resource.Dispose();
     }
 }

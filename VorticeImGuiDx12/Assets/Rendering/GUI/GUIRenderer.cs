@@ -111,9 +111,9 @@ public unsafe sealed partial class GUIRenderer
             Context.UploadBuffer.UploadMeshIndex(graphicsContext, GUIMesh, new Span<byte>(commandList.IdxBuffer.Data.ToPointer(), indexBytes), Format.R16_UInt);
             Context.UploadBuffer.UploadVertexBuffer(graphicsContext, ref GUIMesh.Vertex, new Span<byte>(commandList.VtxBuffer.Data.ToPointer(), vertexBytes));
 
-            GUIMesh.Vertices["POSITION"] = new VertexBuffer() { offset = 0, resource = GUIMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
-            GUIMesh.Vertices["TEXCOORD"] = new VertexBuffer() { offset = 8, resource = GUIMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
-            GUIMesh.Vertices["COLOR"] = new VertexBuffer() { offset = 16, resource = GUIMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
+            GUIMesh.Vertices["POSITION"] = new VertexBuffer() { Offset = 0, Resource = GUIMesh.Vertex, SizeInByte = vertexBytes, Stride = sizeof(ImDrawVert) };
+            GUIMesh.Vertices["TEXCOORD"] = new VertexBuffer() { Offset = 8, Resource = GUIMesh.Vertex, SizeInByte = vertexBytes, Stride = sizeof(ImDrawVert) };
+            GUIMesh.Vertices["COLOR"] = new VertexBuffer() { Offset = 16, Resource = GUIMesh.Vertex, SizeInByte = vertexBytes, Stride = sizeof(ImDrawVert) };
 
             graphicsContext.SetMesh(GUIMesh);
 
