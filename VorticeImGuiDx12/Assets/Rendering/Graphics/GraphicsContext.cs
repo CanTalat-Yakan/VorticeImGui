@@ -144,8 +144,7 @@ public sealed partial class GraphicsContext : IDisposable
 
     public void SetShaderResourceView(Texture2D texture, int slot)
     {
-        int D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING = 5768;
-
+        const int D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING = 5768;
         ShaderResourceViewDescription shaderResourceViewDescription = new()
         {
             ViewDimension = Vortice.Direct3D12.ShaderResourceViewDimension.Texture2D,

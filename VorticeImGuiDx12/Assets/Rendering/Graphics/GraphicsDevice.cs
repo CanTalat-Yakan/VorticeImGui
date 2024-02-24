@@ -51,7 +51,7 @@ public sealed partial class GraphicsDevice : IDisposable
     public void Initialize(bool forHwnd)
     {
         NativeSize = new SizeI(
-            AppWindow.Win32Window.Width, 
+            AppWindow.Win32Window.Width,
             AppWindow.Win32Window.Height);
 
         CreateDevice();
@@ -185,10 +185,10 @@ public sealed partial class GraphicsDevice : IDisposable
 
     private void CreateDescriptorHeaps()
     {
-        const int ConstantBufferViewShaderResourceViewUnorderedAccessViewDescriptorCount = 65536;
+        const int CONSTANTBUFFERVIEW_VIEWSHADERRESOURCEVIEW_UNORDEREDACCESSVIEW_DESCRIPTORCOUNT = 65536;
         DescriptorHeapDescription descriptorHeapDescription = new()
         {
-            DescriptorCount = ConstantBufferViewShaderResourceViewUnorderedAccessViewDescriptorCount,
+            DescriptorCount = CONSTANTBUFFERVIEW_VIEWSHADERRESOURCEVIEW_UNORDEREDACCESSVIEW_DESCRIPTORCOUNT,
             Type = DescriptorHeapType.ConstantBufferViewShaderResourceViewUnorderedAccessView,
             Flags = DescriptorHeapFlags.ShaderVisible,
             NodeMask = 0,
@@ -468,152 +468,137 @@ public sealed partial class GraphicsDevice : IDisposable
 
 public sealed partial class GraphicsDevice : IDisposable
 {
-    public static uint GetBitsPerPixel(Format format)
-    {
-        switch (format)
+    public static uint GetBitsPerPixel(Format format) =>
+        format switch
         {
-            case Format.R32G32B32A32_Typeless:
-            case Format.R32G32B32A32_Float:
-            case Format.R32G32B32A32_UInt:
-            case Format.R32G32B32A32_SInt:
-                return 128;
+            Format.R32G32B32A32_Typeless or
+            Format.R32G32B32A32_Float or
+            Format.R32G32B32A32_UInt or
+            Format.R32G32B32A32_SInt => 128,
 
-            case Format.R32G32B32_Typeless:
-            case Format.R32G32B32_Float:
-            case Format.R32G32B32_UInt:
-            case Format.R32G32B32_SInt:
-                return 96;
+            Format.R32G32B32_Typeless or
+            Format.R32G32B32_Float or
+            Format.R32G32B32_UInt or
+            Format.R32G32B32_SInt => 96,
 
-            case Format.R16G16B16A16_Typeless:
-            case Format.R16G16B16A16_Float:
-            case Format.R16G16B16A16_UNorm:
-            case Format.R16G16B16A16_UInt:
-            case Format.R16G16B16A16_SNorm:
-            case Format.R16G16B16A16_SInt:
-            case Format.R32G32_Typeless:
-            case Format.R32G32_Float:
-            case Format.R32G32_UInt:
-            case Format.R32G32_SInt:
-            case Format.R32G8X24_Typeless:
-            case Format.D32_Float_S8X24_UInt:
-            case Format.R32_Float_X8X24_Typeless:
-            case Format.X32_Typeless_G8X24_UInt:
-            case Format.Y416:
-            case Format.Y210:
-            case Format.Y216:
-                return 64;
+            Format.R16G16B16A16_Typeless or
+            Format.R16G16B16A16_Float or
+            Format.R16G16B16A16_UNorm or
+            Format.R16G16B16A16_UInt or
+            Format.R16G16B16A16_SNorm or
+            Format.R16G16B16A16_SInt or
+            Format.R32G32_Typeless or
+            Format.R32G32_Float or
+            Format.R32G32_UInt or
+            Format.R32G32_SInt or
+            Format.R32G8X24_Typeless or
+            Format.D32_Float_S8X24_UInt or
+            Format.R32_Float_X8X24_Typeless or
+            Format.X32_Typeless_G8X24_UInt or
+            Format.Y416 or
+            Format.Y210 or
+            Format.Y216 => 64,
 
-            case Format.R10G10B10A2_Typeless:
-            case Format.R10G10B10A2_UNorm:
-            case Format.R10G10B10A2_UInt:
-            case Format.R11G11B10_Float:
-            case Format.R8G8B8A8_Typeless:
-            case Format.R8G8B8A8_UNorm:
-            case Format.R8G8B8A8_UNorm_SRgb:
-            case Format.R8G8B8A8_UInt:
-            case Format.R8G8B8A8_SNorm:
-            case Format.R8G8B8A8_SInt:
-            case Format.R16G16_Typeless:
-            case Format.R16G16_Float:
-            case Format.R16G16_UNorm:
-            case Format.R16G16_UInt:
-            case Format.R16G16_SNorm:
-            case Format.R16G16_SInt:
-            case Format.R32_Typeless:
-            case Format.D32_Float:
-            case Format.R32_Float:
-            case Format.R32_UInt:
-            case Format.R32_SInt:
-            case Format.R24G8_Typeless:
-            case Format.D24_UNorm_S8_UInt:
-            case Format.R24_UNorm_X8_Typeless:
-            case Format.X24_Typeless_G8_UInt:
-            case Format.R9G9B9E5_SharedExp:
-            case Format.R8G8_B8G8_UNorm:
-            case Format.G8R8_G8B8_UNorm:
-            case Format.B8G8R8A8_UNorm:
-            case Format.B8G8R8X8_UNorm:
-            case Format.R10G10B10_Xr_Bias_A2_UNorm:
-            case Format.B8G8R8A8_Typeless:
-            case Format.B8G8R8A8_UNorm_SRgb:
-            case Format.B8G8R8X8_Typeless:
-            case Format.B8G8R8X8_UNorm_SRgb:
-            case Format.AYUV:
-            case Format.Y410:
-            case Format.YUY2:
-                return 32;
+            Format.R10G10B10A2_Typeless or
+            Format.R10G10B10A2_UNorm or
+            Format.R10G10B10A2_UInt or
+            Format.R11G11B10_Float or
+            Format.R8G8B8A8_Typeless or
+            Format.R8G8B8A8_UNorm or
+            Format.R8G8B8A8_UNorm_SRgb or
+            Format.R8G8B8A8_UInt or
+            Format.R8G8B8A8_SNorm or
+            Format.R8G8B8A8_SInt or
+            Format.R16G16_Typeless or
+            Format.R16G16_Float or
+            Format.R16G16_UNorm or
+            Format.R16G16_UInt or
+            Format.R16G16_SNorm or
+            Format.R16G16_SInt or
+            Format.R32_Typeless or
+            Format.D32_Float or
+            Format.R32_Float or
+            Format.R32_UInt or
+            Format.R32_SInt or
+            Format.R24G8_Typeless or
+            Format.D24_UNorm_S8_UInt or
+            Format.R24_UNorm_X8_Typeless or
+            Format.X24_Typeless_G8_UInt or
+            Format.R9G9B9E5_SharedExp or
+            Format.R8G8_B8G8_UNorm or
+            Format.G8R8_G8B8_UNorm or
+            Format.B8G8R8A8_UNorm or
+            Format.B8G8R8X8_UNorm or
+            Format.R10G10B10_Xr_Bias_A2_UNorm or
+            Format.B8G8R8A8_Typeless or
+            Format.B8G8R8A8_UNorm_SRgb or
+            Format.B8G8R8X8_Typeless or
+            Format.B8G8R8X8_UNorm_SRgb or
+            Format.AYUV or
+            Format.Y410 or
+            Format.YUY2 => 32,
 
-            case Format.P010:
-            case Format.P016:
-                return 24;
+            Format.P010 or
+            Format.P016 => 24,
 
-            case Format.R8G8_Typeless:
-            case Format.R8G8_UNorm:
-            case Format.R8G8_UInt:
-            case Format.R8G8_SNorm:
-            case Format.R8G8_SInt:
-            case Format.R16_Typeless:
-            case Format.R16_Float:
-            case Format.D16_UNorm:
-            case Format.R16_UNorm:
-            case Format.R16_UInt:
-            case Format.R16_SNorm:
-            case Format.R16_SInt:
-            case Format.B5G6R5_UNorm:
-            case Format.B5G5R5A1_UNorm:
-            case Format.A8P8:
-            case Format.B4G4R4A4_UNorm:
-                return 16;
+            Format.R8G8_Typeless or
+            Format.R8G8_UNorm or
+            Format.R8G8_UInt or
+            Format.R8G8_SNorm or
+            Format.R8G8_SInt or
+            Format.R16_Typeless or
+            Format.R16_Float or
+            Format.D16_UNorm or
+            Format.R16_UNorm or
+            Format.R16_UInt or
+            Format.R16_SNorm or
+            Format.R16_SInt or
+            Format.B5G6R5_UNorm or
+            Format.B5G5R5A1_UNorm or
+            Format.A8P8 or
+            Format.B4G4R4A4_UNorm => 16,
 
-            case Format.NV12:
-            //case Format.420_OPAQUE:
-            case Format.Opaque420:
-            case Format.NV11:
-                return 12;
+            Format.NV12 or
+            Format.Opaque420 or
+            Format.NV11 => 12,
 
-            case Format.R8_Typeless:
-            case Format.R8_UNorm:
-            case Format.R8_UInt:
-            case Format.R8_SNorm:
-            case Format.R8_SInt:
-            case Format.A8_UNorm:
-            case Format.AI44:
-            case Format.IA44:
-            case Format.P8:
-                return 8;
+            Format.R8_Typeless or
+            Format.R8_UNorm or
+            Format.R8_UInt or
+            Format.R8_SNorm or
+            Format.R8_SInt or
+            Format.A8_UNorm or
+            Format.AI44 or
+            Format.IA44 or
+            Format.P8 => 8,
 
-            case Format.R1_UNorm:
-                return 1;
+            Format.R1_UNorm => 1,
 
-            case Format.BC1_Typeless:
-            case Format.BC1_UNorm:
-            case Format.BC1_UNorm_SRgb:
-            case Format.BC4_Typeless:
-            case Format.BC4_UNorm:
-            case Format.BC4_SNorm:
-                return 4;
+            Format.BC1_Typeless or
+            Format.BC1_UNorm or
+            Format.BC1_UNorm_SRgb or
+            Format.BC4_Typeless or
+            Format.BC4_UNorm or
+            Format.BC4_SNorm => 4,
 
-            case Format.BC2_Typeless:
-            case Format.BC2_UNorm:
-            case Format.BC2_UNorm_SRgb:
-            case Format.BC3_Typeless:
-            case Format.BC3_UNorm:
-            case Format.BC3_UNorm_SRgb:
-            case Format.BC5_Typeless:
-            case Format.BC5_UNorm:
-            case Format.BC5_SNorm:
-            case Format.BC6H_Typeless:
-            case Format.BC6H_Uf16:
-            case Format.BC6H_Sf16:
-            case Format.BC7_Typeless:
-            case Format.BC7_UNorm:
-            case Format.BC7_UNorm_SRgb:
-                return 8;
+            Format.BC2_Typeless or
+            Format.BC2_UNorm or
+            Format.BC2_UNorm_SRgb or
+            Format.BC3_Typeless or
+            Format.BC3_UNorm or
+            Format.BC3_UNorm_SRgb or
+            Format.BC5_Typeless or
+            Format.BC5_UNorm or
+            Format.BC5_SNorm or
+            Format.BC6H_Typeless or
+            Format.BC6H_Uf16 or
+            Format.BC6H_Sf16 or
+            Format.BC7_Typeless or
+            Format.BC7_UNorm or
+            Format.BC7_UNorm_SRgb => 8,
 
-            default:
-                return 0;
-        }
-    }
+            _ => 0,
+        };
 
     public ID3D12CommandAllocator GetCommandAllocator() =>
         CommandAllocators[ExecuteIndex];
