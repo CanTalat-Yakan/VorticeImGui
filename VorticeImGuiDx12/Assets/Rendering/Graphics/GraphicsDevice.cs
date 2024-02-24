@@ -83,6 +83,8 @@ public sealed partial class GraphicsDevice : IDisposable
             SwapChain.Description1.Flags).ThrowIfFailed();
 
         GetSwapChainBuffersAndCreateRenderTargetViews();
+
+        Kernel.Instance.Frame();
     }
 
     public void Dispose()

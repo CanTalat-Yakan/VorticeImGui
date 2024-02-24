@@ -55,7 +55,7 @@ public unsafe class RingUploadBuffer : UploadBuffer
     public void SetConstantBufferView(GraphicsContext graphicsContext, int offset, int slot) =>
         graphicsContext.SetConstantBufferView(this, offset, slot);
 
-    public void UploadMeshIndex(GraphicsContext context, Mesh mesh, Span<byte> index, Format indexFormat)
+    public void UploadMeshIndex(GraphicsContext context, MeshInfo mesh, Span<byte> index, Format indexFormat)
     {
         var graphicsDevice = context.GraphicsDevice;
         var commandList = context.CommandList;

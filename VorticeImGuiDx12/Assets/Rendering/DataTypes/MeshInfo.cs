@@ -2,10 +2,11 @@
 
 using Vortice.Direct3D12;
 using Vortice.DXGI;
+using Vortice.Mathematics;
 
 namespace Engine.DataTypes;
 
-public class Mesh : IDisposable
+public class MeshInfo : IDisposable
 {
     public ID3D12Resource Vertex;
     public ID3D12Resource Index;
@@ -19,6 +20,8 @@ public class Mesh : IDisposable
 
     public string Name;
     public Format IndexFormat;
+
+    public BoundingBox BoundingBox;
 
     public void Dispose()
     {

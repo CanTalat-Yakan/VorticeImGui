@@ -13,7 +13,7 @@ public unsafe sealed partial class GUIRenderer
     public InputLayoutDescription InputLayoutDescription;
 
     public Texture2D FontTexture;
-    public Mesh GUIMesh;
+    public MeshInfo GUIMesh;
 
     public PipelineStateObjectDescription PipelineStateObjectDescription = new()
     {
@@ -57,12 +57,12 @@ public unsafe sealed partial class GUIRenderer
         GUIMesh = Context.GetMesh("ImGui Mesh");
 
         GPUUpload gpuUpload = new GPUUpload();
-        gpuUpload.texture2D = FontTexture;
-        gpuUpload.format = Format.R8G8B8A8_UNorm;
-        gpuUpload.textureData = new byte[width * height * bytesPerPixel];
+        gpuUpload.Texture2D = FontTexture;
+        gpuUpload.Format = Format.R8G8B8A8_UNorm;
+        gpuUpload.TextureData = new byte[width * height * bytesPerPixel];
 
-        Span<byte> data = new(pixels, gpuUpload.textureData.Length);
-        data.CopyTo(gpuUpload.textureData);
+        Span<byte> data = new(pixels, gpuUpload.TextureData.Length);
+        data.CopyTo(gpuUpload.TextureData);
 
         Context.UploadQueue.Enqueue(gpuUpload);
     }

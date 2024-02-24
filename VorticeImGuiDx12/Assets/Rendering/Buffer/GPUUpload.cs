@@ -4,13 +4,13 @@ namespace Engine.Buffer;
 
 public class GPUUpload
 {
-    public byte[] vertexData;
-    public byte[] indexData;
-    public byte[] textureData;
+    public byte[] VertexData;
+    public byte[] IndexData;
+    public byte[] TextureData;
 
-    public string name;
-    public Format format;
-    public int stride;
+    public string Name;
+    public Format Format;
+    public int Stride;
 
-    public Texture2D texture2D;
+    public Texture2D Texture2D;
 }

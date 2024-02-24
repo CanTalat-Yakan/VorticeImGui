@@ -195,7 +195,7 @@ public sealed partial class GraphicsContext : IDisposable
         CommandList.OMSetRenderTargets(GraphicsDevice.GetRenderTargetScreen());
     }
 
-    public void SetMesh(Mesh mesh)
+    public void SetMesh(MeshInfo mesh)
     {
         CommandList.IASetPrimitiveTopology(PrimitiveTopology.TriangleList);
 

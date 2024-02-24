@@ -27,9 +27,10 @@ public class Texture2D : IDisposable
         if (!states.Equals(ResourceStates))
         {
             commandList.ResourceBarrierTransition(Resource, ResourceStates, states);
+
             ResourceStates = states;
         }
-        else if (states == ResourceStates.UnorderedAccess)
+        else if (states.Equals(ResourceStates.UnorderedAccess))
             commandList.ResourceBarrierUnorderedAccessView(Resource);
     }
 

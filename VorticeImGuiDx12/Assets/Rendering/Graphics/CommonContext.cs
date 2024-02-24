@@ -18,7 +18,7 @@ public sealed partial class CommonContext : IDisposable
     public Dictionary<string, ReadOnlyMemory<byte>> VertexShaders = new();
     public Dictionary<string, ReadOnlyMemory<byte>> PixelShaders = new();
     public Dictionary<string, RootSignature> RootSignatures = new();
-    public Dictionary<string, Mesh> Meshes = new();
+    public Dictionary<string, MeshInfo> Meshes = new();
     public Dictionary<string, Texture2D> RenderTargets = new();
     public Dictionary<string, PipelineStateObject> PipelineStateObjects = new();
 
@@ -76,9 +76,9 @@ public sealed partial class CommonContext : IDisposable
     public Texture2D GetTextureByStringID(nint pointer) =>
         RenderTargets[PointerToString[pointer]];
 
-    public Mesh GetMesh(string name)
+    public MeshInfo GetMesh(string name)
     {
-        if (Meshes.TryGetValue(name, out Mesh mesh))
+        if (Meshes.TryGetValue(name, out MeshInfo mesh))
             return mesh;
         else
         {
@@ -148,9 +148,9 @@ public sealed partial class CommonContext : IDisposable
             //{
             //    graphicsContext1.UploadMesh(upload.mesh, upload.vertexData, upload.indexData, upload.stride, upload.format);
             //}
-            if (upload.texture2D is not null)
+            if (upload.Texture2D is not null)
             {
-                graphicsContext.UploadTexture(upload.texture2D, upload.textureData);
+                graphicsContext.UploadTexture(upload.Texture2D, upload.TextureData);
             }
         }
     }
