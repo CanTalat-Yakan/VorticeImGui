@@ -237,9 +237,11 @@ public sealed partial class GraphicsContext : IDisposable
         CommandList.ClearRenderTargetView(texture2D.RenderTargetView.GetCPUDescriptorHandleForHeapStart(), new Color4(0, 0, 0, 0));
     }
 
-    public void ClearRenderTargetScreen(Color4 color)
+    public void ClearRenderTargetScreen(Color4? color = null)
     {
-        CommandList.ClearRenderTargetView(GraphicsDevice.GetRenderTargetScreen(), color);
+        color ??= new Color4(0.15f, 0.15f, 0.15f, 1);
+
+        CommandList.ClearRenderTargetView(GraphicsDevice.GetRenderTargetScreen(), color.Value);
     }
 }
 

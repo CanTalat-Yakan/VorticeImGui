@@ -9,7 +9,6 @@ global using Engine.DataTypes;
 global using Engine.Graphics;
 global using Engine.GUI;
 global using Engine.Helper;
-using Vortice.Mathematics;
 
 namespace Engine;
 
@@ -79,7 +78,7 @@ public sealed class Kernel
         graphicsContext.SetDescriptorHeapDefault();
         graphicsContext.ScreenBeginRender();
         graphicsContext.SetRenderTargetScreen();
-        graphicsContext.ClearRenderTargetScreen(new Color4(0.15f, 0.15f, 0.15f, 1));
+        graphicsContext.ClearRenderTargetScreen();
 
         OnRender?.Invoke();
 
