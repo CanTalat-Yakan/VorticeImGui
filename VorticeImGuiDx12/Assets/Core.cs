@@ -8,8 +8,9 @@ using Vortice.Dxc;
 using Vortice.DXGI;
 
 using Engine.GUI;
+using Engine.Graphics;
 
-namespace Engine.Graphics;
+namespace Engine;
 
 public class Core : IDisposable
 {

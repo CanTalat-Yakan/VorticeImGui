@@ -11,7 +11,7 @@ using ImDrawIdx = System.UInt16;
 
 namespace Engine.GUI
 {
-    unsafe public class GUIRender
+    unsafe public class GUIRenderer
     {
         public Core Context;
 

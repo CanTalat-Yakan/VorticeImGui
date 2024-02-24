@@ -31,7 +31,7 @@ public sealed partial class Program
 public sealed partial class Program
 {
     Core _context = new();
-    GUIRender _imGuiRender = new();
+    GUIRenderer _imGuiRender = new();
     DateTime _current;
 
     public void Initialize()
