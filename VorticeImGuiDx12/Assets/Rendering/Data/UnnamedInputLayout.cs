@@ -1,32 +1,35 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-
+using System.Text;
 using Vortice.Direct3D12;
 
-namespace Engine.Graphics;
-
-public class UnnamedInputLayout : IEquatable<UnnamedInputLayout>
+namespace Engine.Rendering
 {
-    public InputElementDescription[] inputElementDescriptions;
-
-    public override bool Equals(object obj) =>
-        Equals(obj as UnnamedInputLayout);
-
-    public bool Equals(UnnamedInputLayout other)
+    public class UnnamedInputLayout : IEquatable<UnnamedInputLayout>
     {
-        if (ReferenceEquals(this, other)) 
-            return true;
+        public InputElementDescription[] inputElementDescriptions;
 
-        return other is not null 
-            && inputElementDescriptions.SequenceEqual(other.inputElementDescriptions);
-    }
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as UnnamedInputLayout);
+        }
 
-    public override int GetHashCode()
-    {
-        HashCode hashCode = new HashCode();
-        for (int i = 0; i < inputElementDescriptions.Length; i++)
-            hashCode.Add(inputElementDescriptions[i]);
+        public bool Equals(UnnamedInputLayout other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            return other != null &&
+                inputElementDescriptions.SequenceEqual(other.inputElementDescriptions); ;
+        }
 
-        return hashCode.ToHashCode();
+        public override int GetHashCode()
+        {
+            HashCode hashCode = new HashCode();
+            for (int i = 0; i < inputElementDescriptions.Length; i++)
+            {
+                hashCode.Add(inputElementDescriptions[i]);
+            }
+            return hashCode.ToHashCode();
+        }
     }
 }

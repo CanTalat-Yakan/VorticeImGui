@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Engine.Graphics;
+namespace Engine.Rendering;
 
 public class Shader
 {

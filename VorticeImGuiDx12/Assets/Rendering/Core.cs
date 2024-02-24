@@ -7,30 +7,30 @@ using Vortice.Direct3D12;
 using Vortice.Dxc;
 using Vortice.DXGI;
 
-using Engine.Graphics;
 using Engine.GUI;
+using Engine.Rendering;
 
-namespace Engine.Rendering
+namespace Engine
 {
     public class Core : IDisposable
     {
-        public GraphicsDevice Device = new();
-        public Renderer GraphicsContext = new();
-        public Dictionary<string, Shader> VertexShaders = new();
-        public Dictionary<string, Shader> PixelShaders = new();
-        public Dictionary<string, RootSignature> RootSignatures = new();
-        public Dictionary<string, Mesh> Meshes = new();
-        public Dictionary<string, Texture2D> RenderTargets = new();
-        public Dictionary<string, PipelineStateObject> PipelineStateObjects = new();
+        public GraphicsDevice Device = new GraphicsDevice();
+        public Renderer GraphicsContext = new Renderer();
+        public Dictionary<string, Shader> VertexShaders = new Dictionary<string, Shader>();
+        public Dictionary<string, Shader> PixelShaders = new Dictionary<string, Shader>();
+        public Dictionary<string, RootSignature> RootSignatures = new Dictionary<string, RootSignature>();
+        public Dictionary<string, Mesh> Meshes = new Dictionary<string, Mesh>();
+        public Dictionary<string, Texture2D> RenderTargets = new Dictionary<string, Texture2D>();
+        public Dictionary<string, PipelineStateObject> PipelineStateObjects = new Dictionary<string, PipelineStateObject>();
 
-        public Dictionary<IntPtr, string> PointerToString = new();
-        public Dictionary<string, IntPtr> StringToPointer = new();
+        public Dictionary<IntPtr, string> PointerToString = new Dictionary<IntPtr, string>();
+        public Dictionary<string, IntPtr> StringToPointer = new Dictionary<string, IntPtr>();
 
-        public ConcurrentQueue<GPUUpload> UploadQueue = new();
-        public RingUploadBuffer UploadBuffer = new();
+        public ConcurrentQueue<GPUUpload> UploadQueue = new ConcurrentQueue<GPUUpload>();
+        public RingUploadBuffer UploadBuffer = new RingUploadBuffer();
 
-        public IntPtr ImGuiContext;
-        public GUIInputHandler ImGuiInputHandler;
+        public IntPtr imguiContext;
+        public GUIInputHandler imguiInputHandler;
 
         public void LoadDefaultResource()
         {
@@ -38,30 +38,22 @@ namespace Engine.Rendering
 
             VertexShaders["ImGui"] = new Shader() { CompiledCode = LoadShader(DxcShaderStage.Vertex, directoryPath + "ImGui.hlsl", "VS"), Name = "ImGui VS" };
             PixelShaders["ImGui"] = new Shader() { CompiledCode = LoadShader(DxcShaderStage.Pixel, directoryPath + "ImGui.hlsl", "PS"), Name = "ImGui PS" };
-            PipelineStateObjects["ImGui"] = new PipelineStateObject(VertexShaders["ImGui"], PixelShaders["ImGui"]); ;
+            PipelineStateObjects["ImGui"] = new PipelineStateObject(VertexShaders["ImGui"], PixelShaders["ImGui"]);
         }
 
-        private int somePointerValue = 65536;
-        public IntPtr GetStringID(string name)
+        int a = 65536;
+        public IntPtr GetStringId(string s)
         {
-            if (StringToPointer.TryGetValue(name, out IntPtr pointer))
-                return pointer;
-
-            pointer = new IntPtr(somePointerValue);
-
-            StringToPointer[name] = pointer;
-            PointerToString[pointer] = name;
-
-            somePointerValue++;
-
-            return pointer;
+            if (StringToPointer.TryGetValue(s, out IntPtr ptr))
+                return ptr;
+            ptr = new IntPtr(a);
+            StringToPointer[s] = ptr;
+            PointerToString[ptr] = s;
+            a++;
+            return ptr;
         }
-
-        public string IDToString(nint pointer) =>
-            PointerToString[pointer];
-
-        public Texture2D GetTextureByStringID(nint pointer) =>
-            RenderTargets[PointerToString[pointer]];
+        public string IdToString(IntPtr ptr) => PointerToString[ptr];
+        public Texture2D GetTexByStrId(IntPtr ptr) => RenderTargets[PointerToString[ptr]];
 
         public RootSignature CreateRootSignatureFromString(string s)
         {
@@ -115,37 +107,39 @@ namespace Engine.Rendering
             return result.GetObjectBytecodeMemory();
         }
 
+        //get or create mesh
         public Mesh GetMesh(string name)
         {
             if (Meshes.TryGetValue(name, out Mesh mesh))
+            {
                 return mesh;
+            }
             else
             {
                 mesh = new Mesh();
-                mesh.UnnamedInputLayout = new UnnamedInputLayout()
+                mesh.unnamedInputLayout = new UnnamedInputLayout()
                 {
-                    inputElementDescriptions =
-                    [
-                        new InputElementDescription("POSITION", 0, Format.R32G32_Float, 0),
-                        new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float, 1),
-                        new InputElementDescription("COLOR", 0, Format.R8G8B8A8_UNorm, 2)
-                    ]
+                    inputElementDescriptions = new[]
+                    {
+                     new InputElementDescription("POSITION", 0, Format.R32G32_Float, 0),
+                     new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float, 1),
+                     new InputElementDescription("COLOR", 0, Format.R8G8B8A8_UNorm, 2)
+                     }
                 };
                 Meshes[name] = mesh;
-
                 return mesh;
             }
         }
 
-        public void GPUUploadData(Renderer graphicsContext1)
+        public void GPUUploadDatas(Renderer graphicsContext1)
         {
             while (UploadQueue.TryDequeue(out var upload))
             {
-                //if (upload.mesh is not null)
+                //if (upload.mesh != null)
                 //{
                 //    graphicsContext1.UploadMesh(upload.mesh, upload.vertexData, upload.indexData, upload.stride, upload.format);
                 //}
-                if (upload.texture2D is not null)
+                if (upload.texture2D != null)
                 {
                     graphicsContext1.UploadTexture(upload.texture2D, upload.textureData);
                 }
@@ -163,13 +157,11 @@ namespace Engine.Rendering
             GraphicsContext.Dispose();
             Device.Dispose();
         }
-
-        void DisposeDictionaryItems<T1, T2>(Dictionary<T1, T2> dictionary) where T2 : IDisposable
+        void DisposeDictionaryItems<T1, T2>(Dictionary<T1, T2> dict) where T2 : IDisposable
         {
-            foreach (var pair in dictionary)
+            foreach (var pair in dict)
                 pair.Value.Dispose();
-
-            dictionary.Clear();
+            dict.Clear();
         }
     }
 }

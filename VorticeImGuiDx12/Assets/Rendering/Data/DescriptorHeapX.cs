@@ -2,50 +2,52 @@
 
 using Vortice.Direct3D12;
 
-namespace Engine.Graphics;
+namespace Engine.Rendering;
 
 public class DescriptorHeapX : IDisposable
 {
-    public GraphicsDevice GraphicsDevice;
-    public ID3D12DescriptorHeap Heap;
+    public GraphicsDevice graphicsDevice;
+    public ID3D12DescriptorHeap heap;
 
-    public uint AllocatedCount;
-    public uint DescriptorCount;
+    public uint allocatedCount;
+    public uint descriptorCount;
     public uint IncrementSize;
 
     public void Initialize(GraphicsDevice graphicsDevice, DescriptorHeapDescription descriptorHeapDescription)
     {
-        GraphicsDevice = graphicsDevice;
-        AllocatedCount = 0;
-        DescriptorCount = (uint)descriptorHeapDescription.DescriptorCount;
-        GraphicsDevice.ThrowIfFailed(graphicsDevice.Device.CreateDescriptorHeap(descriptorHeapDescription, out Heap));
-        IncrementSize = (uint)graphicsDevice.Device.GetDescriptorHandleIncrementSize(descriptorHeapDescription.Type);
+        this.graphicsDevice = graphicsDevice;
+        allocatedCount = 0;
+        descriptorCount = (uint)descriptorHeapDescription.DescriptorCount;
+        GraphicsDevice.ThrowIfFailed(graphicsDevice.device.CreateDescriptorHeap(descriptorHeapDescription, out heap));
+        IncrementSize = (uint)graphicsDevice.device.GetDescriptorHandleIncrementSize(descriptorHeapDescription.Type);
     }
+
 
     public void GetTempHandle(out CpuDescriptorHandle cpuHandle, out GpuDescriptorHandle gpuHandle)
     {
-        CpuDescriptorHandle cpuHandle1 = Heap.GetCPUDescriptorHandleForHeapStart();
-        cpuHandle1.Ptr += AllocatedCount * IncrementSize;
-        GpuDescriptorHandle gpuHandle1 = Heap.GetGPUDescriptorHandleForHeapStart();
-        gpuHandle1.Ptr += (ulong)(AllocatedCount * IncrementSize);
+        CpuDescriptorHandle cpuHandle1 = heap.GetCPUDescriptorHandleForHeapStart();
+        cpuHandle1.Ptr += allocatedCount * IncrementSize;
+        GpuDescriptorHandle gpuHandle1 = heap.GetGPUDescriptorHandleForHeapStart();
+        gpuHandle1.Ptr += (ulong)(allocatedCount * IncrementSize);
 
-        AllocatedCount = (AllocatedCount + 1) % DescriptorCount;
+        allocatedCount = (allocatedCount + 1) % descriptorCount;
         cpuHandle = cpuHandle1;
         gpuHandle = gpuHandle1;
     }
 
+
     public CpuDescriptorHandle GetTempCpuHandle()
     {
-        CpuDescriptorHandle cpuHandle1 = Heap.GetCPUDescriptorHandleForHeapStart();
-        cpuHandle1.Ptr += AllocatedCount * IncrementSize;
+        CpuDescriptorHandle cpuHandle1 = heap.GetCPUDescriptorHandleForHeapStart();
+        cpuHandle1.Ptr += allocatedCount * IncrementSize;
 
-        AllocatedCount = (AllocatedCount + 1) % DescriptorCount;
+        allocatedCount = (allocatedCount + 1) % descriptorCount;
         return cpuHandle1;
     }
 
     public void Dispose()
     {
-        Heap?.Dispose();
-        Heap = null;
+        heap?.Dispose();
+        heap = null;
     }
 }
