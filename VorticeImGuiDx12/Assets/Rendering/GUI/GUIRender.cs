@@ -40,7 +40,7 @@ unsafe public class GUIRender
         //ImFontPtr font = io.Fonts.AddFontFromFileTTF("c:\\Windows\\Fonts\\SIMHEI.ttf", 14, null, io.Fonts.GetGlyphRangesChineseFull());
 
         io.Fonts.GetTexDataAsRGBA32(out byte* pixels, out int width, out int height, out int bytesPerPixel);
-        io.Fonts.TexID = Context.GetStringId("imgui_font");
+        io.Fonts.TexID = Context.GetStringID("imgui_font");
 
         FontTexture.Width = width;
         FontTexture.Height = height;
@@ -105,7 +105,7 @@ unsafe public class GUIRender
                 }
                 else
                 {
-                    graphicsContext.SetShaderResourceView(Context.GetTexByStrId(cmd.TextureId), 0);
+                    graphicsContext.SetShaderResourceView(Context.GetTextureByStringID(cmd.TextureId), 0);
                     var rect = new Vortice.RawRect((int)(cmd.ClipRect.X - clip_off.X), (int)(cmd.ClipRect.Y - clip_off.Y), (int)(cmd.ClipRect.Z - clip_off.X), (int)(cmd.ClipRect.W - clip_off.Y));
                     graphicsContext.CommandList.RSSetScissorRects(new[] { rect });
 

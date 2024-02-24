@@ -8,26 +8,25 @@ using Vortice.Dxc;
 using Vortice.DXGI;
 
 using Engine.GUI;
-using Engine.Rendering;
 
-namespace Engine;
+namespace Engine.Rendering;
 
 public class Core : IDisposable
 {
-    public GraphicsDevice Device = new GraphicsDevice();
-    public GraphicsContext GraphicsContext = new GraphicsContext();
-    public Dictionary<string, Shader> VertexShaders = new Dictionary<string, Shader>();
-    public Dictionary<string, Shader> PixelShaders = new Dictionary<string, Shader>();
-    public Dictionary<string, RootSignature> RootSignatures = new Dictionary<string, RootSignature>();
-    public Dictionary<string, Mesh> Meshes = new Dictionary<string, Mesh>();
-    public Dictionary<string, Texture2D> RenderTargets = new Dictionary<string, Texture2D>();
-    public Dictionary<string, PipelineStateObject> PipelineStateObjects = new Dictionary<string, PipelineStateObject>();
+    public GraphicsDevice Device = new();
+    public GraphicsContext GraphicsContext = new();
+    public Dictionary<string, Shader> VertexShaders = new();
+    public Dictionary<string, Shader> PixelShaders = new();
+    public Dictionary<string, RootSignature> RootSignatures = new();
+    public Dictionary<string, Mesh> Meshes = new();
+    public Dictionary<string, Texture2D> RenderTargets = new();
+    public Dictionary<string, PipelineStateObject> PipelineStateObjects = new();
 
-    public Dictionary<IntPtr, string> PointerToString = new Dictionary<IntPtr, string>();
-    public Dictionary<string, IntPtr> StringToPointer = new Dictionary<string, IntPtr>();
+    public Dictionary<IntPtr, string> PointerToString = new();
+    public Dictionary<string, IntPtr> StringToPointer = new();
 
-    public ConcurrentQueue<GPUUpload> UploadQueue = new ConcurrentQueue<GPUUpload>();
-    public RingUploadBuffer UploadBuffer = new RingUploadBuffer();
+    public ConcurrentQueue<GPUUpload> UploadQueue = new();
+    public RingUploadBuffer UploadBuffer = new();
 
     public IntPtr ImGuiContext;
     public GUIInputHandler ImGuiInputHandler;
@@ -38,24 +37,30 @@ public class Core : IDisposable
 
         VertexShaders["ImGui"] = new Shader() { CompiledCode = LoadShader(DxcShaderStage.Vertex, directoryPath + "ImGui.hlsl", "VS"), Name = "ImGui VS" };
         PixelShaders["ImGui"] = new Shader() { CompiledCode = LoadShader(DxcShaderStage.Pixel, directoryPath + "ImGui.hlsl", "PS"), Name = "ImGui PS" };
-        PipelineStateObjects["ImGui"] = new PipelineStateObject(VertexShaders["ImGui"], PixelShaders["ImGui"]);
+        PipelineStateObjects["ImGui"] = new PipelineStateObject(VertexShaders["ImGui"], PixelShaders["ImGui"]); ;
     }
 
-    int a = 65536;
-    public IntPtr GetStringId(string s)
+    private int somePointerValue = 65536;
+    public IntPtr GetStringID(string name)
     {
-        if (StringToPointer.TryGetValue(s, out IntPtr ptr))
-            return ptr;
-        ptr = new IntPtr(a);
-        StringToPointer[s] = ptr;
-        PointerToString[ptr] = s;
-        a++;
-        return ptr;
+        if (StringToPointer.TryGetValue(name, out IntPtr pointer))
+            return pointer;
+
+        pointer = new IntPtr(somePointerValue);
+
+        StringToPointer[name] = pointer;
+        PointerToString[pointer] = name;
+
+        somePointerValue++;
+
+        return pointer;
     }
 
-    public string IdToString(IntPtr ptr) => PointerToString[ptr];
+    public string IDToString(nint pointer) =>
+        PointerToString[pointer];
 
-    public Texture2D GetTexByStrId(IntPtr ptr) => RenderTargets[PointerToString[ptr]];
+    public Texture2D GetTextureByStringID(nint pointer) =>
+        RenderTargets[PointerToString[pointer]];
 
     public RootSignature CreateRootSignatureFromString(string s)
     {
@@ -112,22 +117,21 @@ public class Core : IDisposable
     public Mesh GetMesh(string name)
     {
         if (Meshes.TryGetValue(name, out Mesh mesh))
-        {
             return mesh;
-        }
         else
         {
             mesh = new Mesh();
             mesh.UnnamedInputLayout = new UnnamedInputLayout()
             {
-                InputElementDescriptions = new[]
-                {
-                 new InputElementDescription("POSITION", 0, Format.R32G32_Float, 0),
-                 new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float, 1),
-                 new InputElementDescription("COLOR", 0, Format.R8G8B8A8_UNorm, 2)
-                 }
+                InputElementDescriptions =
+                [
+                    new InputElementDescription("POSITION", 0, Format.R32G32_Float, 0),
+                    new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float, 1),
+                    new InputElementDescription("COLOR", 0, Format.R8G8B8A8_UNorm, 2)
+                ]
             };
             Meshes[name] = mesh;
+
             return mesh;
         }
     }
@@ -136,11 +140,11 @@ public class Core : IDisposable
     {
         while (UploadQueue.TryDequeue(out var upload))
         {
-            //if (upload.mesh != null)
+            //if (upload.mesh is not null)
             //{
             //    graphicsContext1.UploadMesh(upload.mesh, upload.vertexData, upload.indexData, upload.stride, upload.format);
             //}
-            if (upload.texture2D != null)
+            if (upload.texture2D is not null)
             {
                 graphicsContext1.UploadTexture(upload.texture2D, upload.textureData);
             }
@@ -159,10 +163,11 @@ public class Core : IDisposable
         Device.Dispose();
     }
 
-    void DisposeDictionaryItems<T1, T2>(Dictionary<T1, T2> dict) where T2 : IDisposable
+    void DisposeDictionaryItems<T1, T2>(Dictionary<T1, T2> dictionary) where T2 : IDisposable
     {
-        foreach (var pair in dict)
+        foreach (var pair in dictionary)
             pair.Value.Dispose();
-        dict.Clear();
+
+        dictionary.Clear();
     }
 }
