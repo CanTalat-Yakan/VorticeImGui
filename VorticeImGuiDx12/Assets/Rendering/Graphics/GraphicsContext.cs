@@ -156,7 +156,7 @@ public sealed partial class GraphicsContext : IDisposable
 
         texture.StateChange(CommandList, ResourceStates.GenericRead);
 
-        GraphicsDevice.CBVSRVUAVHeap.GetTempHandle(out CpuDescriptorHandle CPUHandle, out GpuDescriptorHandle GPUHandle);
+        GraphicsDevice.CBVSRVUAVHeap.GetTemporaryHandle(out CpuDescriptorHandle CPUHandle, out GpuDescriptorHandle GPUHandle);
         GraphicsDevice.Device.CreateShaderResourceView(texture.Resource, shaderResourceViewDescription, CPUHandle);
 
         CommandList.SetGraphicsRootDescriptorTable(CurrentRootSignature.ShaderResourceView[slot], GPUHandle);

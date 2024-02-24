@@ -618,7 +618,7 @@ public sealed partial class GraphicsDevice : IDisposable
 
     public CpuDescriptorHandle GetRenderTargetScreen()
     {
-        CpuDescriptorHandle handle = RenderTextureViewHeap.GetTempCpuHandle();
+        CpuDescriptorHandle handle = RenderTextureViewHeap.GetTemporaryCPUHandle();
         var resource = ScreenResources[SwapChain.CurrentBackBufferIndex];
 
         Device.CreateRenderTargetView(resource, null, handle);
