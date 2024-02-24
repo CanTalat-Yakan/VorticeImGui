@@ -8,7 +8,7 @@ namespace Engine.Rendering;
 
 public class PipelineStateObject : IDisposable
 {
-    public List<PSOBundle> PSOBundle = new List<PSOBundle>();
+    public List<PipelineStateObjectBundle> PipelineStateObjectBundle = new List<PipelineStateObjectBundle>();
 
     public ReadOnlyMemory<byte> VertexShader;
     public ReadOnlyMemory<byte> GeometryShader;
@@ -28,9 +28,9 @@ public class PipelineStateObject : IDisposable
         this.PixelShader = pixelShader.CompiledCode;
     }
 
-    public ID3D12PipelineState GetState(GraphicsDevice device, PSODescription desc, RootSignature rootSignature, UnnamedInputLayout inputLayout)
+    public ID3D12PipelineState GetState(GraphicsDevice device, PipelineStateObjectDescription desc, RootSignature rootSignature, UnnamedInputLayout inputLayout)
     {
-        foreach (var psoCombind in PSOBundle)
+        foreach (var psoCombind in PipelineStateObjectBundle)
         {
             if (psoCombind.PSODescription == desc && psoCombind.RootSignature == rootSignature && psoCombind.UnnamedInputLayout == inputLayout)
             {
@@ -70,7 +70,7 @@ public class PipelineStateObject : IDisposable
         var pipelineState = device.Device.CreateGraphicsPipelineState<ID3D12PipelineState>(graphicsPipelineStateDescription);
         if (pipelineState == null)
             throw new Exception("pipeline state error");
-        PSOBundle.Add(new PSOBundle { PSODescription = desc, PipelineState = pipelineState, RootSignature = rootSignature, UnnamedInputLayout = inputLayout });
+        PipelineStateObjectBundle.Add(new PipelineStateObjectBundle { PSODescription = desc, PipelineState = pipelineState, RootSignature = rootSignature, UnnamedInputLayout = inputLayout });
         return pipelineState;
     }
 
@@ -82,23 +82,23 @@ public class PipelineStateObject : IDisposable
 
     public void Dispose()
     {
-        foreach (var combine in PSOBundle)
+        foreach (var combine in PipelineStateObjectBundle)
         {
             combine.PipelineState.Dispose();
         }
-        PSOBundle.Clear();
+        PipelineStateObjectBundle.Clear();
     }
 }
 
-public class PSOBundle
+public class PipelineStateObjectBundle
 {
-    public PSODescription PSODescription;
+    public PipelineStateObjectDescription PSODescription;
     public RootSignature RootSignature;
     public ID3D12PipelineState PipelineState;
     public UnnamedInputLayout UnnamedInputLayout;
 }
 
-public struct PSODescription : IEquatable<PSODescription>
+public struct PipelineStateObjectDescription : IEquatable<PipelineStateObjectDescription>
 {
     public int RenderTargetCount;
     public Format RenderTargetFormat;
@@ -112,10 +112,10 @@ public struct PSODescription : IEquatable<PSODescription>
 
     public override bool Equals(object obj)
     {
-        return obj is PSODescription desc && Equals(desc);
+        return obj is PipelineStateObjectDescription desc && Equals(desc);
     }
 
-    public bool Equals(PSODescription other)
+    public bool Equals(PipelineStateObjectDescription other)
     {
         return RenderTargetCount == other.RenderTargetCount &&
                RenderTargetFormat == other.RenderTargetFormat &&
@@ -143,12 +143,12 @@ public struct PSODescription : IEquatable<PSODescription>
         return hash.ToHashCode();
     }
 
-    public static bool operator ==(PSODescription x, PSODescription y)
+    public static bool operator ==(PipelineStateObjectDescription x, PipelineStateObjectDescription y)
     {
         return x.Equals(y);
     }
 
-    public static bool operator !=(PSODescription x, PSODescription y)
+    public static bool operator !=(PipelineStateObjectDescription x, PipelineStateObjectDescription y)
     {
         return !(x == y);
     }

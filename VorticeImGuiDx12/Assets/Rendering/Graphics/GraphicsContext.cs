@@ -145,7 +145,7 @@ public class GraphicsContext : IDisposable
         CommandList.SetGraphicsRootConstantBufferView(CurrentRootSignature.ConstantBufferView[slot], uploadBuffer.resource.GPUVirtualAddress + (ulong)offset);
     }
 
-    public void SetPipelineState(PipelineStateObject pipelineStateObject, PSODescription psoDesc)
+    public void SetPipelineState(PipelineStateObject pipelineStateObject, PipelineStateObjectDescription psoDesc)
     {
         this.PipelineStateObject = pipelineStateObject;
         this.PipelineStateObjectDescription = psoDesc;
@@ -300,7 +300,7 @@ public class GraphicsContext : IDisposable
 
     public RootSignature CurrentRootSignature;
     public PipelineStateObject PipelineStateObject;
-    public PSODescription PipelineStateObjectDescription;
+    public PipelineStateObjectDescription PipelineStateObjectDescription;
     public UnnamedInputLayout UnnamedInputLayout;
 
     public void Dispose()
