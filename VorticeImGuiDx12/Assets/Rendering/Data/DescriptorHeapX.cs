@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Engine.Helper;
+using System;
 
 using Vortice.Direct3D12;
 
@@ -16,9 +17,12 @@ public class DescriptorHeapX : IDisposable
     public void Initialize(GraphicsDevice graphicsDevice, DescriptorHeapDescription descriptorHeapDescription)
     {
         GraphicsDevice = graphicsDevice;
+
         AllocatedCount = 0;
         DescriptorCount = (uint)descriptorHeapDescription.DescriptorCount;
-        GraphicsDevice.ThrowIfFailed(graphicsDevice.Device.CreateDescriptorHeap(descriptorHeapDescription, out Heap));
+
+        GraphicsDevice.Device.CreateDescriptorHeap(descriptorHeapDescription, out Heap).ThrowIfFailed();
+
         IncrementSize = (uint)graphicsDevice.Device.GetDescriptorHandleIncrementSize(descriptorHeapDescription.Type);
     }
 
