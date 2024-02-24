@@ -4,20 +4,25 @@ using ImGuiNET;
 using Vortice.Mathematics;
 
 using Engine.GUI;
+using Engine.Data;
 
 namespace Engine;
 
 public sealed partial class Program
 {
     public AppWindow AppWindow { get; private set; }
+    public Config Config;
 
     [STAThread]
     private static void Main() =>
         new Program().Run();
 
-    public void Run()
+    public void Run(bool renderGUI = true, Config config = null)
     {
-        AppWindow = new();
+        Config ??= Config.GetDefault();
+        Config.GUI = renderGUI;
+
+        AppWindow = new(Config.WindowData);
         AppWindow.Show();
 
         Initialize();
@@ -40,27 +45,26 @@ public sealed partial class Program
 
         Context.LoadDefaultResource();
 
-        Context.Device.Initialize();
-        Context.UploadBuffer.Initialize(Context.Device, 67108864);//64 MB
+        Context.GraphicsDevice = new(AppWindow.Win32Window, Config);
+        Context.UploadBuffer.Initialize(Context.GraphicsDevice, 67108864);//64 MB
 
         ImGuiRender.Initialize();
-        
-        Context.ImGuiInputHandler = new GUIInputHandler();
+
+        Context.ImGuiInputHandler = new();
         Context.ImGuiInputHandler.hwnd = AppWindow.Win32Window.Handle;
 
-        Context.GraphicsContext.Initialize(Context.Device);
-        Context.Device.SetupSwapChain(AppWindow.Win32Window.Handle);
+        Context.GraphicsContext.Initialize(Context.GraphicsDevice);
     }
 
     public void UpdateAndDraw()
     {
-        if (AppWindow.Win32Window.Width != Context.Device.Width || AppWindow.Win32Window.Height != Context.Device.Height)
+        if (AppWindow.Win32Window.Width != Context.GraphicsDevice.Size.Width || AppWindow.Win32Window.Height != Context.GraphicsDevice.Size.Height)
         {
-            Context.Device.Resize(AppWindow.Win32Window.Width, AppWindow.Win32Window.Height);
-            ImGui.GetIO().DisplaySize = new System.Numerics.Vector2(Context.Device.Width, Context.Device.Height);
+            Context.GraphicsDevice.Resize(AppWindow.Win32Window.Width, AppWindow.Win32Window.Height);
+            ImGui.GetIO().DisplaySize = new System.Numerics.Vector2(Context.GraphicsDevice.Size.Width, Context.GraphicsDevice.Size.Height);
         }
 
-        Context.Device.Begin();
+        Context.GraphicsDevice.Begin();
 
         var graphicsContext = Context.GraphicsContext;
         graphicsContext.BeginCommand();
@@ -87,6 +91,6 @@ public sealed partial class Program
         graphicsContext.EndCommand();
         graphicsContext.Execute();
 
-        Context.Device.Present(true);
+        Context.GraphicsDevice.Present((int)Config.VSync);
     }
 }

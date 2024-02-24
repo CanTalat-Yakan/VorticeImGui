@@ -6,6 +6,7 @@ using Engine.Interoperation;
 using static Engine.Interoperation.Kernel32;
 using static Engine.Interoperation.User32;
 using Engine.GUI;
+using Engine.Data;
 
 namespace Engine;
 
@@ -19,15 +20,15 @@ public sealed partial class AppWindow
     private string _profiler = string.Empty;
     private string _output = string.Empty;
 
-    public AppWindow()
+    public AppWindow(WindowData windowData)
     {
         CreateWindowClass(out var windowClass);
 
         Win32Window = new(
             windowClass.ClassName,
-            "Clean ImGui",
-            1080,
-            720);
+            windowData.Title,
+            windowData.Width,
+            windowData.Height);
     }
 
     public void Show(ShowWindowCommand command = ShowWindowCommand.Normal) =>

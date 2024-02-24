@@ -15,8 +15,10 @@ public sealed partial class GraphicsContext : IDisposable
     public GraphicsDevice GraphicsDevice;
 
     public RootSignature CurrentRootSignature;
+
     public PipelineStateObject PipelineStateObject;
     public PipelineStateObjectDescription PipelineStateObjectDescription;
+
     public UnnamedInputLayout UnnamedInputLayout;
 
     public void Initialize(GraphicsDevice graphicsDevice)
@@ -107,8 +109,8 @@ public sealed partial class GraphicsContext : IDisposable
 
     public void SetRenderTargetScreen()
     {
-        CommandList.RSSetViewport(new Viewport(0, 0, GraphicsDevice.Width, GraphicsDevice.Height, 0.0f, 1.0f));
-        CommandList.RSSetScissorRect(new RectI(0, 0, GraphicsDevice.Width, GraphicsDevice.Height));
+        CommandList.RSSetViewport(new Viewport(0, 0, GraphicsDevice.Size.Width, GraphicsDevice.Size.Height, 0.0f, 1.0f));
+        CommandList.RSSetScissorRect(new RectI(0, 0, GraphicsDevice.Size.Width, GraphicsDevice.Size.Height));
         CommandList.OMSetRenderTargets(GraphicsDevice.GetRenderTargetScreen());
     }
 

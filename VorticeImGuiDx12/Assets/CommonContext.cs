@@ -14,7 +14,7 @@ namespace Engine;
 
 public class CommonContext : IDisposable
 {
-    public GraphicsDevice Device = new();
+    public GraphicsDevice GraphicsDevice;
     public GraphicsContext GraphicsContext = new();
     public Dictionary<string, Shader> VertexShaders = new();
     public Dictionary<string, Shader> PixelShaders = new();
@@ -101,7 +101,7 @@ public class CommonContext : IDisposable
             }
         }
 
-        Device.CreateRootSignature(rootSignature, description);
+        GraphicsDevice.CreateRootSignature(rootSignature, description);
 
         return rootSignature;
     }
@@ -161,7 +161,7 @@ public class CommonContext : IDisposable
         DisposeDictionaryItems(Meshes);
 
         GraphicsContext.Dispose();
-        Device.Dispose();
+        GraphicsDevice.Dispose();
     }
 
     void DisposeDictionaryItems<T1, T2>(Dictionary<T1, T2> dictionary) where T2 : IDisposable

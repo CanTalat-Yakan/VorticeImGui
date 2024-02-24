@@ -7,21 +7,30 @@ using Vortice.Direct3D12.Debug;
 using Vortice.DXGI;
 using Vortice.Mathematics;
 
+using Engine.Data;
 using Engine.Helper;
 
 namespace Engine.Graphics;
 
 public sealed partial class GraphicsDevice : IDisposable
 {
+    public SizeI Size => NativeSize;
+    public SizeI NativeSize { get; private set; }
+
     public ID3D12Device2 Device;
     public IDXGIAdapter Adapter;
     public IDXGIFactory7 DXGIFactory;
+
     public ID3D12CommandQueue CommandQueue;
+
     public DescriptorHeapX CBVSRVUAVHeap = new();
     public DescriptorHeapX DepthStencilViewHeap = new();
     public DescriptorHeapX RenderTextureViewHeap = new();
+
     public IDXGISwapChain3 SwapChain;
+
     public List<ID3D12CommandAllocator> CommandAllocators;
+
     public EventWaitHandle WaitHandle;
     public ID3D12Fence Fence;
 
@@ -34,11 +43,7 @@ public sealed partial class GraphicsDevice : IDisposable
     public Queue<ResourceDelayDestroy> DelayDestroy = new();
 
     public int ExecuteIndex = 0;
-    public ulong ExecuteCount = 3;//greater equal than 'bufferCount'
-
-    public int Width;
-    public int Height;
-    public IntPtr WindowHandle;
+    public ulong ExecuteCount = 3; // Greater equal than 'bufferCount'.
 
     public Format SwapChainFormat = Format.R8G8B8A8_UNorm;
     public List<ID3D12Resource> ScreenResources;
@@ -46,139 +51,75 @@ public sealed partial class GraphicsDevice : IDisposable
     public int BufferCount = 3;
     public int CBVSRVUAVDescriptorCount = 65536;
 
-    public void Initialize()
+    public Config Config = new();
+
+    private Win32Window _win32Window;
+
+    public GraphicsDevice(Win32Window win32Window, Config config = null)
     {
-#if DEBUG
-        if (D3D12.D3D12GetDebugInterface<ID3D12Debug>(out var pDx12Debug).Success)
-            pDx12Debug.EnableDebugLayer();
-#endif
+        if (win32Window is not null)
+            _win32Window = win32Window;
+        else
+            throw new NullReferenceException(
+                """
+                An invalid or null Win32Window instance was passed to the Renderer. 
+                Please ensure that you provide a valid Win32Window object to the Renderer.
+                """);
 
-        DXGI.CreateDXGIFactory1(out DXGIFactory).ThrowIfFailed();
+        if (config is not null)
+            Config = config;
 
-        int index1 = 0;
-        while (true)
-        {
-            var result = DXGIFactory.EnumAdapterByGpuPreference(index1, GpuPreference.HighPerformance, out Adapter);
-            if (result.Success)
-                break;
+        // Set the size.
+        NativeSize = new(
+            _win32Window.Width,
+            _win32Window.Height);
 
-            index1++;
-        }
-        D3D12.D3D12CreateDevice(this.Adapter, out Device).ThrowIfFailed();
+        Initialize(true);
+    }
 
-        CommandQueueDescription description = new()
-        {
-            Flags = CommandQueueFlags.None,
-            Type = CommandListType.Direct,
-            NodeMask = 0,
-            Priority = 0,
-        };
-        Device.CreateCommandQueue(description, out CommandQueue).ThrowIfFailed();
-
-        DescriptorHeapDescription descriptorHeapDescription = new()
-        {
-            DescriptorCount = CBVSRVUAVDescriptorCount,
-            Type = DescriptorHeapType.ConstantBufferViewShaderResourceViewUnorderedAccessView,
-            Flags = DescriptorHeapFlags.ShaderVisible,
-            NodeMask = 0,
-        };
-        CBVSRVUAVHeap.Initialize(this, descriptorHeapDescription);
-
-        descriptorHeapDescription = new()
-        {
-            DescriptorCount = 64,
-            Type = DescriptorHeapType.DepthStencilView,
-            Flags = DescriptorHeapFlags.None,
-        };
-        DepthStencilViewHeap.Initialize(this, descriptorHeapDescription);
-
-        descriptorHeapDescription = new()
-        {
-            DescriptorCount = 64,
-            Type = DescriptorHeapType.RenderTargetView,
-            Flags = DescriptorHeapFlags.None,
-        };
-        RenderTextureViewHeap.Initialize(this, descriptorHeapDescription);
-        WaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
-
-        CommandAllocators = new List<ID3D12CommandAllocator>();
-        for (int i = 0; i < BufferCount; i++)
-        {
-            Device.CreateCommandAllocator(CommandListType.Direct, out ID3D12CommandAllocator commandAllocator).ThrowIfFailed();
-
-            CommandAllocators.Add(commandAllocator);
-        }
-
-        Device.CreateFence(ExecuteCount, FenceFlags.None, out Fence).ThrowIfFailed();
+    public void Initialize(bool forHwnd)
+    {
+        CreateDevice();
+        CreateGraphicsQueue();
+        CreateDescriptorHeaps();
+        CreateFence();
+        CreateCommandAllocator();
+        CreateSwapChain(forHwnd);
 
         ExecuteCount++;
     }
 
-    public void SetupSwapChain(IntPtr hwnd) =>
-        WindowHandle = hwnd;
-
-    public void Resize(int width, int height)
+    public void Resize(int newWidth, int newHeight)
     {
         WaitForGPU();
 
-        Width = Math.Max(width, 1);
-        Height = Math.Max(height, 1);
+        NativeSize = new(
+            Math.Max(1, newWidth),
+            Math.Max(1, newHeight));
 
-        if (SwapChain is null)
-        {
-            SwapChainDescription1 swapChainDescription = new()
-            {
-                Width = width,
-                Height = height,
-                Format = SwapChainFormat,
-                Stereo = false,
-                SampleDescription = new() { Count = 1, Quality = 0 },
-                BufferUsage = Usage.RenderTargetOutput,
-                BufferCount = BufferCount,
-                SwapEffect = SwapEffect.FlipDiscard,
-                Flags = SwapChainFlags.AllowTearing,
-                Scaling = Scaling.Stretch,
-                AlphaMode = AlphaMode.Ignore,
-            };
-            IDXGISwapChain1 swapChain1 = DXGIFactory.CreateSwapChainForHwnd(CommandQueue, WindowHandle, swapChainDescription);
+        DisposeScreenResources();
 
-            SwapChain = swapChain1.QueryInterface<IDXGISwapChain3>();
+        SwapChain.ResizeBuffers(
+            SwapChain.Description.BufferCount,
+            Size.Width,
+            Size.Height,
+            SwapChain.Description1.Format,
+            SwapChain.Description1.Flags).ThrowIfFailed();
 
-            swapChain1.Dispose();
-        }
-        else
-        {
-            foreach (var screenResource in ScreenResources)
-                screenResource.Dispose();
-
-            SwapChain.ResizeBuffers(BufferCount, width, height, SwapChainFormat, SwapChainFlags.AllowTearing).ThrowIfFailed();
-        }
-
-        ScreenResources = new List<ID3D12Resource>();
-        for (int i = 0; i < BufferCount; i++)
-        {
-            SwapChain.GetBuffer(i, out ID3D12Resource res).ThrowIfFailed();
-
-            ScreenResources.Add(res);
-        }
+        GetSwapChainBuffersAndCreateRenderTargetViews();
     }
 
     public void Dispose()
     {
         WaitForGPU();
 
+        DisposeScreenResources();
+
         while (DelayDestroy.Count > 0)
-        {
-            var p = DelayDestroy.Dequeue();
-            p.Resource?.Dispose();
-        }
+            DelayDestroy.Dequeue().Resource?.Dispose();
 
         foreach (var commandAllocator in CommandAllocators)
             commandAllocator.Dispose();
-        
-        if (ScreenResources != null)
-            foreach (var screenResource in ScreenResources)
-                screenResource.Dispose();
 
         DXGIFactory?.Dispose();
         CommandQueue?.Dispose();
@@ -190,6 +131,13 @@ public sealed partial class GraphicsDevice : IDisposable
         Device?.Dispose();
         Adapter?.Dispose();
     }
+
+    public void DisposeScreenResources()
+    {
+        if (ScreenResources is not null)
+            foreach (var screenResource in ScreenResources)
+                screenResource.Dispose();
+    }
 }
 
 public sealed partial class GraphicsDevice : IDisposable
@@ -197,12 +145,9 @@ public sealed partial class GraphicsDevice : IDisposable
     public void Begin() =>
         GetCommandAllocator().Reset();
 
-    public void Present(bool vsync)
+    public void Present(int syncInterval)
     {
-        if (vsync)
-            SwapChain.Present(1, PresentFlags.None).ThrowIfFailed();
-        else
-            SwapChain.Present(0, PresentFlags.AllowTearing).ThrowIfFailed();
+        SwapChain.Present(syncInterval, PresentFlags.DoNotWait);
 
         CommandQueue.Signal(Fence, ExecuteCount);
 
@@ -229,6 +174,119 @@ public sealed partial class GraphicsDevice : IDisposable
         DestroyResourceInternal(Fence.CompletedValue);
 
         ExecuteCount++;
+    }
+}
+
+public sealed partial class GraphicsDevice : IDisposable
+{
+    private void CreateDevice()
+    {
+        if (D3D12.D3D12GetDebugInterface<ID3D12Debug>(out var debug).Success)
+            debug.EnableDebugLayer();
+
+        DXGI.CreateDXGIFactory1(out DXGIFactory).ThrowIfFailed();
+
+        int index = 0;
+        while (true)
+        {
+            var result = DXGIFactory.EnumAdapterByGpuPreference(index, GpuPreference.HighPerformance, out Adapter);
+            if (result.Success)
+                break;
+
+            index++;
+        }
+
+        D3D12.D3D12CreateDevice(Adapter, out Device).ThrowIfFailed();
+        Device.Name = "Device";
+    }
+
+    private void CreateGraphicsQueue()
+    {
+        CommandQueue = Device.CreateCommandQueue(CommandListType.Direct);
+        CommandQueue.Name = "Command Queue";
+    }
+
+    private void CreateDescriptorHeaps()
+    {
+        DescriptorHeapDescription descriptorHeapDescription = new()
+        {
+            DescriptorCount = CBVSRVUAVDescriptorCount,
+            Type = DescriptorHeapType.ConstantBufferViewShaderResourceViewUnorderedAccessView,
+            Flags = DescriptorHeapFlags.ShaderVisible,
+            NodeMask = 0,
+        };
+        CBVSRVUAVHeap.Initialize(this, descriptorHeapDescription);
+
+        descriptorHeapDescription = new()
+        {
+            DescriptorCount = 64,
+            Type = DescriptorHeapType.DepthStencilView,
+            Flags = DescriptorHeapFlags.None,
+        };
+        DepthStencilViewHeap.Initialize(this, descriptorHeapDescription);
+
+        descriptorHeapDescription = new()
+        {
+            DescriptorCount = 64,
+            Type = DescriptorHeapType.RenderTargetView,
+            Flags = DescriptorHeapFlags.None,
+        };
+        RenderTextureViewHeap.Initialize(this, descriptorHeapDescription);
+    }
+
+    private void CreateFence()
+    {
+        WaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+        Device.CreateFence(ExecuteCount, FenceFlags.None, out Fence).ThrowIfFailed();
+        Fence.Name = "Fence";
+    }
+
+    private void CreateCommandAllocator()
+    {
+        CommandAllocators = new();
+        for (int i = 0; i < BufferCount; i++)
+        {
+            Device.CreateCommandAllocator(CommandListType.Direct, out ID3D12CommandAllocator commandAllocator).ThrowIfFailed();
+            commandAllocator.Name = "CommandAllocator " + i;
+
+            CommandAllocators.Add(commandAllocator);
+        }
+    }
+
+    private void CreateSwapChain(bool forHwnd)
+    {
+        SwapChainDescription1 swapChainDescription = new()
+        {
+            Width = Size.Width,
+            Height = Size.Height,
+            Format = SwapChainFormat,
+            Stereo = false,
+            SampleDescription = new() { Count = 1, Quality = 0 },
+            BufferUsage = Usage.RenderTargetOutput,
+            BufferCount = BufferCount,
+            SwapEffect = SwapEffect.FlipDiscard,
+            Flags = SwapChainFlags.AllowTearing,
+            Scaling = Scaling.Stretch,
+            AlphaMode = AlphaMode.Ignore,
+        };
+        using IDXGISwapChain1 swapChain1 = forHwnd
+            ? DXGIFactory.CreateSwapChainForHwnd(CommandQueue, _win32Window.Handle, swapChainDescription)
+            : DXGIFactory.CreateSwapChainForComposition(CommandQueue, swapChainDescription);
+
+        SwapChain = swapChain1.QueryInterface<IDXGISwapChain3>();
+
+        GetSwapChainBuffersAndCreateRenderTargetViews();
+    }
+
+    private void GetSwapChainBuffersAndCreateRenderTargetViews()
+    {
+        ScreenResources = new();
+        for (int i = 0; i < BufferCount; i++)
+        {
+            SwapChain.GetBuffer(i, out ID3D12Resource resource).ThrowIfFailed();
+
+            ScreenResources.Add(resource);
+        }
     }
 }
 
@@ -371,7 +429,7 @@ public sealed partial class GraphicsDevice : IDisposable
         {
             DestroyResource(texture.Resource);
             resourceDescription.Flags = ResourceFlags.AllowRenderTarget | ResourceFlags.AllowUnorderedAccess;
-            
+
             Device.CreateCommittedResource<ID3D12Resource>(HeapProperties.DefaultHeapProperties,
                  HeapFlags.None,
                  resourceDescription,
