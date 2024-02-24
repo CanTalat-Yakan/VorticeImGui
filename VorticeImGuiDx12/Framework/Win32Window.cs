@@ -4,7 +4,7 @@ using Engine.Interoperation;
 
 using static Engine.Interoperation.User32;
 
-namespace Engine;
+namespace Engine.Framework;
 
 public class Win32Window
 {

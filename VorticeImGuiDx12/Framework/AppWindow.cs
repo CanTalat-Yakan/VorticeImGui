@@ -5,7 +5,7 @@ using Engine.Interoperation;
 using static Engine.Interoperation.Kernel32;
 using static Engine.Interoperation.User32;
 
-namespace Engine;
+namespace Engine.Framework;
 
 public sealed partial class AppWindow
 {

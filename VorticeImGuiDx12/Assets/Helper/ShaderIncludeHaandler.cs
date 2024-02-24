@@ -9,8 +9,8 @@ namespace Engine.Helper;
 
 public class ShaderIncludeHandler : CallbackBase, IDxcIncludeHandler
 {
-    private readonly string[] _includeDirectories;
     private readonly Dictionary<string, SourceCodeBlob> _sourceFiles = new();
+    private readonly string[] _includeDirectories;
 
     public ShaderIncludeHandler(params string[] includeDirectories)
     {
@@ -66,7 +66,6 @@ public class ShaderIncludeHandler : CallbackBase, IDxcIncludeHandler
 
         return null;
     }
-
 
     private class SourceCodeBlob : IDisposable
     {

@@ -25,15 +25,6 @@ public unsafe sealed partial class GUIRenderer
         BlendState = "Alpha",
     };
 
-    public void LoadDefaultResource()
-    {
-        string directoryPath = AppContext.BaseDirectory + @"Assets\Resources\Shaders\";
-
-        Context.VertexShaders["ImGui"] = Context.GraphicsContext.LoadShader(DxcShaderStage.Vertex, directoryPath + "ImGui.hlsl", "VS");
-        Context.PixelShaders["ImGui"] = Context.GraphicsContext.LoadShader(DxcShaderStage.Pixel, directoryPath + "ImGui.hlsl", "PS");
-        Context.PipelineStateObjects["ImGui"] = new PipelineStateObject(Context.VertexShaders["ImGui"], Context.PixelShaders["ImGui"]); ;
-    }
-
     public void Initialize()
     {
         Context.Kernel.GUIContext = ImGui.CreateContext();
@@ -74,6 +65,18 @@ public unsafe sealed partial class GUIRenderer
         ImGui.Render();
 
         RenderImDrawData();
+    }
+}
+
+public unsafe sealed partial class GUIRenderer
+{
+    public void LoadDefaultResource()
+    {
+        string directoryPath = AppContext.BaseDirectory + @"Assets\Resources\Shaders\";
+
+        Context.VertexShaders["ImGui"] = Context.GraphicsContext.LoadShader(DxcShaderStage.Vertex, directoryPath + "ImGui.hlsl", "VS");
+        Context.PixelShaders["ImGui"] = Context.GraphicsContext.LoadShader(DxcShaderStage.Pixel, directoryPath + "ImGui.hlsl", "PS");
+        Context.PipelineStateObjects["ImGui"] = new PipelineStateObject(Context.VertexShaders["ImGui"], Context.PixelShaders["ImGui"]); ;
     }
 
     private void RenderImDrawData()

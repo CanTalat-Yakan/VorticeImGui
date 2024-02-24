@@ -8,7 +8,6 @@ namespace Engine.Buffer;
 public class UploadBuffer : IDisposable
 {
     public ID3D12Resource Resource;
-
     public int Size;
 
     public void Dispose() =>
@@ -62,8 +61,8 @@ public unsafe class RingUploadBuffer : UploadBuffer
 
         int uploadOffset = Upload(index);
         if (mesh.IndexFormat != indexFormat
-            || mesh.IndexCount != index.Length / (indexFormat == Format.R32_UInt ? 4 : 2)
-            || mesh.IndexSizeInByte != index.Length)
+         || mesh.IndexCount != index.Length / (indexFormat == Format.R32_UInt ? 4 : 2)
+         || mesh.IndexSizeInByte != index.Length)
         {
             mesh.IndexFormat = indexFormat;
             mesh.IndexCount = index.Length / (indexFormat == Format.R32_UInt ? 4 : 2);

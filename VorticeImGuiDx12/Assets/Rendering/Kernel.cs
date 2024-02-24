@@ -6,6 +6,7 @@ global using ImGuiNET;
 global using Engine.Buffer;
 global using Engine.Data;
 global using Engine.DataTypes;
+global using Engine.Framework;
 global using Engine.Graphics;
 global using Engine.GUI;
 global using Engine.Helper;

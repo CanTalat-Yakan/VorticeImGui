@@ -8,7 +8,7 @@ namespace Engine.GUI
 
         public IntPtr WindowHandle;
 
-        ImGuiMouseCursor lastCursor;
+        private ImGuiMouseCursor _lastCursor;
 
         public GUIInputHandler()
         {
@@ -53,9 +53,9 @@ namespace Engine.GUI
             UpdateMousePosition();
 
             var mouseCursor = ImGui.GetIO().MouseDrawCursor ? ImGuiMouseCursor.None : ImGui.GetMouseCursor();
-            if (mouseCursor != lastCursor)
+            if (mouseCursor != _lastCursor)
             {
-                lastCursor = mouseCursor;
+                _lastCursor = mouseCursor;
                 UpdateMouseCursor();
             }
         }

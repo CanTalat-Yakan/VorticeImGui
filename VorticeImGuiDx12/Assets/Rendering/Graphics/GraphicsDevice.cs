@@ -14,12 +14,12 @@ public sealed partial class GraphicsDevice : IDisposable
     public SizeI NativeSize { get; private set; }
 
     public ID3D12Device2 Device;
+    public IDXGIFactory7 Factory;
     public IDXGIAdapter Adapter;
-    public IDXGIFactory7 DXGIFactory;
 
     public ID3D12CommandQueue CommandQueue;
 
-    public DescriptorHeapX CBVSRVUAVHeap = new();
+    public DescriptorHeapX ShaderResourcesHeap = new();
     public DescriptorHeapX DepthStencilViewHeap = new();
     public DescriptorHeapX RenderTextureViewHeap = new();
 
@@ -45,7 +45,6 @@ public sealed partial class GraphicsDevice : IDisposable
     public List<ID3D12Resource> ScreenResources;
 
     public int BufferCount = 3;
-    public int CBVSRVUAVDescriptorCount = 65536;
 
     public Config Config = new();
 
@@ -82,7 +81,7 @@ public sealed partial class GraphicsDevice : IDisposable
             SwapChain.Description1.Format,
             SwapChain.Description1.Flags).ThrowIfFailed();
 
-        GetSwapChainBuffersAndCreateRenderTargetViews();
+        CreateScreenResources();
 
         Kernel.Instance.Frame();
     }
@@ -99,9 +98,9 @@ public sealed partial class GraphicsDevice : IDisposable
         foreach (var commandAllocator in CommandAllocators)
             commandAllocator.Dispose();
 
-        DXGIFactory?.Dispose();
+        Factory?.Dispose();
         CommandQueue?.Dispose();
-        CBVSRVUAVHeap?.Dispose();
+        ShaderResourcesHeap?.Dispose();
         DepthStencilViewHeap?.Dispose();
         RenderTextureViewHeap?.Dispose();
         SwapChain?.Dispose();
@@ -162,12 +161,12 @@ public sealed partial class GraphicsDevice : IDisposable
         if (D3D12.D3D12GetDebugInterface<ID3D12Debug>(out var debug).Success)
             debug.EnableDebugLayer();
 
-        DXGI.CreateDXGIFactory1(out DXGIFactory).ThrowIfFailed();
+        DXGI.CreateDXGIFactory1(out Factory).ThrowIfFailed();
 
         int index = 0;
         while (true)
         {
-            var result = DXGIFactory.EnumAdapterByGpuPreference(index, GpuPreference.HighPerformance, out Adapter);
+            var result = Factory.EnumAdapterByGpuPreference(index, GpuPreference.HighPerformance, out Adapter);
             if (result.Success)
                 break;
 
@@ -186,14 +185,15 @@ public sealed partial class GraphicsDevice : IDisposable
 
     private void CreateDescriptorHeaps()
     {
+        const int ConstantBufferViewShaderResourceViewUnorderedAccessViewDescriptorCount = 65536;
         DescriptorHeapDescription descriptorHeapDescription = new()
         {
-            DescriptorCount = CBVSRVUAVDescriptorCount,
+            DescriptorCount = ConstantBufferViewShaderResourceViewUnorderedAccessViewDescriptorCount,
             Type = DescriptorHeapType.ConstantBufferViewShaderResourceViewUnorderedAccessView,
             Flags = DescriptorHeapFlags.ShaderVisible,
             NodeMask = 0,
         };
-        CBVSRVUAVHeap.Initialize(this, descriptorHeapDescription);
+        ShaderResourcesHeap.Initialize(this, descriptorHeapDescription);
 
         descriptorHeapDescription = new()
         {
@@ -248,15 +248,15 @@ public sealed partial class GraphicsDevice : IDisposable
             AlphaMode = AlphaMode.Ignore,
         };
         using IDXGISwapChain1 swapChain1 = forHwnd
-            ? DXGIFactory.CreateSwapChainForHwnd(CommandQueue, AppWindow.Win32Window.Handle, swapChainDescription)
-            : DXGIFactory.CreateSwapChainForComposition(CommandQueue, swapChainDescription);
+            ? Factory.CreateSwapChainForHwnd(CommandQueue, AppWindow.Win32Window.Handle, swapChainDescription)
+            : Factory.CreateSwapChainForComposition(CommandQueue, swapChainDescription);
 
         SwapChain = swapChain1.QueryInterface<IDXGISwapChain3>();
 
-        GetSwapChainBuffersAndCreateRenderTargetViews();
+        CreateScreenResources();
     }
 
-    private void GetSwapChainBuffersAndCreateRenderTargetViews()
+    private void CreateScreenResources()
     {
         ScreenResources = new();
         for (int i = 0; i < BufferCount; i++)

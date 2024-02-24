@@ -127,7 +127,7 @@ public sealed partial class GraphicsContext : IDisposable
 {
     public void SetDescriptorHeapDefault()
     {
-        CommandList.SetDescriptorHeaps(1, new[] { GraphicsDevice.CBVSRVUAVHeap.Heap });
+        CommandList.SetDescriptorHeaps(1, new[] { GraphicsDevice.ShaderResourcesHeap.Heap });
     }
 
     public void SetRootSignature(RootSignature rootSignature)
@@ -156,7 +156,7 @@ public sealed partial class GraphicsContext : IDisposable
 
         texture.StateChange(CommandList, ResourceStates.GenericRead);
 
-        GraphicsDevice.CBVSRVUAVHeap.GetTemporaryHandle(out CpuDescriptorHandle CPUHandle, out GpuDescriptorHandle GPUHandle);
+        GraphicsDevice.ShaderResourcesHeap.GetTemporaryHandle(out CpuDescriptorHandle CPUHandle, out GpuDescriptorHandle GPUHandle);
         GraphicsDevice.Device.CreateShaderResourceView(texture.Resource, shaderResourceViewDescription, CPUHandle);
 
         CommandList.SetGraphicsRootDescriptorTable(CurrentRootSignature.ShaderResourceView[slot], GPUHandle);

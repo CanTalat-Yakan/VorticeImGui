@@ -7,7 +7,7 @@ namespace Engine.DataTypes;
 
 public class PipelineStateObject : IDisposable
 {
-    public List<PipelineStateObjectBundle> PipelineStateObjectBundles = new List<PipelineStateObjectBundle>();
+    public List<PipelineStateObjectBundle> PipelineStateObjectBundles = new();
 
     public ReadOnlyMemory<byte> VertexShader;
     public ReadOnlyMemory<byte> GeometryShader;
