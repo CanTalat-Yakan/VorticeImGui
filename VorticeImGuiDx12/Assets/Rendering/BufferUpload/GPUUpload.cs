@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Vortice.DXGI;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+
+using Vortice.DXGI;
 
 namespace Engine.Rendering
 {
@@ -13,10 +12,13 @@ namespace Engine.Rendering
         public byte[] vertexData;
         public byte[] indexData;
         public byte[] textureData;
+
         public string name;
         public Format format;
         public int stride;
+
         public Texture2D texture2D;
+
         public void Quad()
         {
             Vector4[] position = new Vector4[]
@@ -34,13 +36,13 @@ namespace Engine.Rendering
             int sizeofVector4 = 16;
             vertexData = new byte[position.Length * sizeofVector4];
             indexData = new byte[index.Length * sizeof(int)];
-            MemCpy(Marshal.UnsafeAddrOfPinnedArrayElement(vertexData, 0), position, (uint)vertexData.Length);
-            MemCpy(Marshal.UnsafeAddrOfPinnedArrayElement(indexData, 0), index, (uint)indexData.Length);
+            MemoryCopy(Marshal.UnsafeAddrOfPinnedArrayElement(vertexData, 0), position, (uint)vertexData.Length);
+            MemoryCopy(Marshal.UnsafeAddrOfPinnedArrayElement(indexData, 0), index, (uint)indexData.Length);
             stride = 16;
             format = Format.R32_UInt;
         }
 
-        public static unsafe void MemCpy<T>(IntPtr destination, T[] source, uint count)
+        public static unsafe void MemoryCopy<T>(IntPtr destination, T[] source, uint count)
             where T : struct
         {
             GCHandle gcHandle = GCHandle.Alloc(source, GCHandleType.Pinned);
@@ -48,7 +50,7 @@ namespace Engine.Rendering
             gcHandle.Free();
         }
 
-        public static unsafe void MemCpy<T>(IntPtr destination, T source, uint count)
+        public static unsafe void MemoryCopy<T>(IntPtr destination, T source, uint count)
         {
             IntPtr sourcePtr = (IntPtr)Unsafe.AsPointer(ref source);
             Unsafe.CopyBlock((void*)destination, (void*)sourcePtr, count);

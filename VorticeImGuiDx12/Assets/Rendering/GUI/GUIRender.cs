@@ -18,7 +18,7 @@ unsafe public class GUIRender
     public Texture2D FontTexture;
     public Mesh ImGuiMesh;
 
-    PSODesc psoDesc = new PSODesc
+    PSODescription psoDesc = new PSODescription
     {
         CullMode = CullMode.None,
         RenderTargetFormat = Format.R8G8B8A8_UNorm,
@@ -28,10 +28,10 @@ unsafe public class GUIRender
         BlendState = "Alpha",
     };
 
-    public void Init()
+    public void Initialization()
     {
-        Context.imguiContext = ImGui.CreateContext();
-        ImGui.SetCurrentContext(Context.imguiContext);
+        Context.ImGuiContext = ImGui.CreateContext();
+        ImGui.SetCurrentContext(Context.ImGuiContext);
         var io = ImGui.GetIO();
         io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
         FontTexture = new Texture2D();
@@ -42,10 +42,10 @@ unsafe public class GUIRender
         io.Fonts.GetTexDataAsRGBA32(out byte* pixels, out int width, out int height, out int bytesPerPixel);
         io.Fonts.TexID = Context.GetStringId("imgui_font");
 
-        FontTexture.width = width;
-        FontTexture.height = height;
-        FontTexture.mipLevels = 1;
-        FontTexture.format = Format.R8G8B8A8_UNorm;
+        FontTexture.Width = width;
+        FontTexture.Height = height;
+        FontTexture.MipLevels = 1;
+        FontTexture.Format = Format.R8G8B8A8_UNorm;
         ImGuiMesh = Context.GetMesh("imgui_mesh");
 
         GPUUpload gpuUpload = new GPUUpload();
@@ -63,7 +63,7 @@ unsafe public class GUIRender
         ImGui.ShowDemoWindow();
         ImGui.Render();
         var data = ImGui.GetDrawData();
-        Renderer graphicsContext = Context.GraphicsContext;
+        GraphicsContext graphicsContext = Context.GraphicsContext;
         float L = data.DisplayPos.X;
         float R = data.DisplayPos.X + data.DisplaySize.X;
         float T = data.DisplayPos.Y;
@@ -89,10 +89,10 @@ unsafe public class GUIRender
             var indexBytes = cmdList.IdxBuffer.Size * sizeof(ImDrawIdx);
 
             Context.UploadBuffer.UploadMeshIndex(graphicsContext, ImGuiMesh, new Span<byte>(cmdList.IdxBuffer.Data.ToPointer(), indexBytes), Format.R16_UInt);
-            Context.UploadBuffer.UploadVertexBuffer(graphicsContext,ref ImGuiMesh._vertex, new Span<byte>(cmdList.VtxBuffer.Data.ToPointer(), vertBytes));
-            ImGuiMesh.vertices["POSITION"] = new _VertexBuffer() { offset = 0, resource = ImGuiMesh._vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
-            ImGuiMesh.vertices["TEXCOORD"] = new _VertexBuffer() { offset = 8, resource = ImGuiMesh._vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
-            ImGuiMesh.vertices["COLOR"] = new _VertexBuffer() { offset = 16, resource = ImGuiMesh._vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
+            Context.UploadBuffer.UploadVertexBuffer(graphicsContext,ref ImGuiMesh.Vertex, new Span<byte>(cmdList.VtxBuffer.Data.ToPointer(), vertBytes));
+            ImGuiMesh.Vertices["POSITION"] = new VertexBuffer() { offset = 0, resource = ImGuiMesh.Vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
+            ImGuiMesh.Vertices["TEXCOORD"] = new VertexBuffer() { offset = 8, resource = ImGuiMesh.Vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
+            ImGuiMesh.Vertices["COLOR"] = new VertexBuffer() { offset = 16, resource = ImGuiMesh.Vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
 
             graphicsContext.SetMesh(ImGuiMesh);
 

@@ -15,7 +15,7 @@ namespace Engine
     public class Core : IDisposable
     {
         public GraphicsDevice Device = new GraphicsDevice();
-        public Renderer GraphicsContext = new Renderer();
+        public GraphicsContext GraphicsContext = new GraphicsContext();
         public Dictionary<string, Shader> VertexShaders = new Dictionary<string, Shader>();
         public Dictionary<string, Shader> PixelShaders = new Dictionary<string, Shader>();
         public Dictionary<string, RootSignature> RootSignatures = new Dictionary<string, RootSignature>();
@@ -29,8 +29,8 @@ namespace Engine
         public ConcurrentQueue<GPUUpload> UploadQueue = new ConcurrentQueue<GPUUpload>();
         public RingUploadBuffer UploadBuffer = new RingUploadBuffer();
 
-        public IntPtr imguiContext;
-        public GUIInputHandler imguiInputHandler;
+        public IntPtr ImGuiContext;
+        public GUIInputHandler ImGuiInputHandler;
 
         public void LoadDefaultResource()
         {
@@ -117,9 +117,9 @@ namespace Engine
             else
             {
                 mesh = new Mesh();
-                mesh.unnamedInputLayout = new UnnamedInputLayout()
+                mesh.UnnamedInputLayout = new UnnamedInputLayout()
                 {
-                    inputElementDescriptions = new[]
+                    InputElementDescriptions = new[]
                     {
                      new InputElementDescription("POSITION", 0, Format.R32G32_Float, 0),
                      new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float, 1),
@@ -131,7 +131,7 @@ namespace Engine
             }
         }
 
-        public void GPUUploadDatas(Renderer graphicsContext1)
+        public void GPUUploadData(GraphicsContext graphicsContext1)
         {
             while (UploadQueue.TryDequeue(out var upload))
             {

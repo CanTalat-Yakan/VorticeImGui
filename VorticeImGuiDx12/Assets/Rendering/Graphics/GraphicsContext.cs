@@ -13,13 +13,14 @@ namespace Engine.Rendering
         public ulong RowPitch;
         public ulong SlicePitch;
     }
-    public class Renderer : IDisposable
+
+    public class GraphicsContext : IDisposable
     {
         const int D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING = 5768;
 
         public void Initialize(GraphicsDevice graphicsDevice)
         {
-            ThrowIfFailed(graphicsDevice.device.CreateCommandList(0, CommandListType.Direct, graphicsDevice.GetCommandAllocator(), null, out commandList));
+            ThrowIfFailed(graphicsDevice.Device.CreateCommandList(0, CommandListType.Direct, graphicsDevice.GetCommandAllocator(), null, out commandList));
             commandList.Close();
             this.graphicsDevice = graphicsDevice;
         }
@@ -32,33 +33,33 @@ namespace Engine.Rendering
 
         public void SetDescriptorHeapDefault()
         {
-            commandList.SetDescriptorHeaps(1, new[] { graphicsDevice.cbvsrvuavHeap.heap });
+            commandList.SetDescriptorHeaps(1, new[] { graphicsDevice.CBVSRVUAVHeap.Heap });
         }
 
         public void SetRootSignature(RootSignature rootSignature)
         {
             currentRootSignature = rootSignature;
-            commandList.SetGraphicsRootSignature(rootSignature.rootSignature);
+            commandList.SetGraphicsRootSignature(rootSignature.Resource);
         }
 
         public void SetComputeRootSignature(RootSignature rootSignature)
         {
             currentRootSignature = rootSignature;
-            commandList.SetComputeRootSignature(rootSignature.rootSignature);
+            commandList.SetComputeRootSignature(rootSignature.Resource);
         }
 
         public void SetSRV(Texture2D texture, int slot)
         {
             ShaderResourceViewDescription shaderResourceViewDescription = new ShaderResourceViewDescription();
             shaderResourceViewDescription.ViewDimension = Vortice.Direct3D12.ShaderResourceViewDimension.Texture2D;
-            shaderResourceViewDescription.Format = texture.format;
+            shaderResourceViewDescription.Format = texture.Format;
             shaderResourceViewDescription.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            shaderResourceViewDescription.Texture2D.MipLevels = texture.mipLevels;
+            shaderResourceViewDescription.Texture2D.MipLevels = texture.MipLevels;
 
             texture.StateChange(commandList, ResourceStates.GenericRead);
-            graphicsDevice.cbvsrvuavHeap.GetTempHandle(out CpuDescriptorHandle cpuHandle, out GpuDescriptorHandle gpuHandle);
-            graphicsDevice.device.CreateShaderResourceView(texture.resource, shaderResourceViewDescription, cpuHandle);
-            commandList.SetGraphicsRootDescriptorTable(currentRootSignature.srv[slot], gpuHandle);
+            graphicsDevice.CBVSRVUAVHeap.GetTempHandle(out CpuDescriptorHandle cpuHandle, out GpuDescriptorHandle gpuHandle);
+            graphicsDevice.Device.CreateShaderResourceView(texture.Resource, shaderResourceViewDescription, cpuHandle);
+            commandList.SetGraphicsRootDescriptorTable(currentRootSignature.ShaderResourceView[slot], gpuHandle);
         }
 
         public void SetDSVRTV(Texture2D dsv, Texture2D[] rtvs, bool clearDSV, bool clearRTV)
@@ -72,24 +73,24 @@ namespace Engine.Rendering
                 {
                     Texture2D rtv = rtvs[i];
                     rtv.StateChange(commandList, ResourceStates.RenderTarget);
-                    rtvHandles[i] = rtv.renderTargetView.GetCPUDescriptorHandleForHeapStart();
+                    rtvHandles[i] = rtv.RenderTargetView.GetCPUDescriptorHandleForHeapStart();
                 }
             }
             if (clearDSV && dsv != null)
-                commandList.ClearDepthStencilView(dsv.depthStencilView.GetCPUDescriptorHandleForHeapStart(), ClearFlags.Depth | ClearFlags.Stencil, 1.0f, 0);
+                commandList.ClearDepthStencilView(dsv.DepthStencilView.GetCPUDescriptorHandleForHeapStart(), ClearFlags.Depth | ClearFlags.Stencil, 1.0f, 0);
             if (clearRTV && rtvs != null)
             {
                 foreach (var rtv in rtvs)
-                    commandList.ClearRenderTargetView(rtv.renderTargetView.GetCPUDescriptorHandleForHeapStart(), new Color4());
+                    commandList.ClearRenderTargetView(rtv.RenderTargetView.GetCPUDescriptorHandleForHeapStart(), new Color4());
             }
 
-            commandList.OMSetRenderTargets(rtvHandles, dsv.depthStencilView.GetCPUDescriptorHandleForHeapStart());
+            commandList.OMSetRenderTargets(rtvHandles, dsv.DepthStencilView.GetCPUDescriptorHandleForHeapStart());
         }
 
         public void SetRenderTargetScreen()
         {
-            commandList.RSSetViewport(new Viewport(0, 0, graphicsDevice.width, graphicsDevice.height, 0.0f, 1.0f));
-            commandList.RSSetScissorRect(new RectI(0, 0, graphicsDevice.width, graphicsDevice.height));
+            commandList.RSSetViewport(new Viewport(0, 0, graphicsDevice.Width, graphicsDevice.Height, 0.0f, 1.0f));
+            commandList.RSSetScissorRect(new RectI(0, 0, graphicsDevice.Width, graphicsDevice.Height));
             commandList.OMSetRenderTargets(graphicsDevice.GetRenderTargetScreen());
         }
 
@@ -98,11 +99,11 @@ namespace Engine.Rendering
             commandList.IASetPrimitiveTopology(PrimitiveTopology.TriangleList);
 
             int c = -1;
-            foreach (var desc in mesh.unnamedInputLayout.inputElementDescriptions)
+            foreach (var desc in mesh.UnnamedInputLayout.InputElementDescriptions)
             {
                 if (desc.Slot != c)
                 {
-                    if (mesh.vertices != null && mesh.vertices.TryGetValue(desc.SemanticName, out var vertex))
+                    if (mesh.Vertices != null && mesh.Vertices.TryGetValue(desc.SemanticName, out var vertex))
                     {
                         commandList.IASetVertexBuffers(desc.Slot, new VertexBufferView(vertex.resource.GPUVirtualAddress + (ulong)vertex.offset, vertex.sizeInByte - vertex.offset, vertex.stride));
                     }
@@ -110,46 +111,46 @@ namespace Engine.Rendering
                 }
             }
 
-            if (mesh.index != null)
-                commandList.IASetIndexBuffer(new IndexBufferView(mesh.index.GPUVirtualAddress, mesh.indexSizeInByte, mesh.indexFormat));
-            unnamedInputLayout = mesh.unnamedInputLayout;
+            if (mesh.Index != null)
+                commandList.IASetIndexBuffer(new IndexBufferView(mesh.Index.GPUVirtualAddress, mesh.IndexSizeInByte, mesh.IndexFormat));
+            unnamedInputLayout = mesh.UnnamedInputLayout;
         }
 
         public void UploadTexture(Texture2D texture, byte[] data)
         {
-            ID3D12Resource resourceUpload1 = graphicsDevice.device.CreateCommittedResource<ID3D12Resource>(
+            ID3D12Resource resourceUpload1 = graphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
                 new HeapProperties(HeapType.Upload),
                 HeapFlags.None,
                 ResourceDescription.Buffer((ulong)data.Length),
                 ResourceStates.GenericRead);
             graphicsDevice.DestroyResource(resourceUpload1);
-            graphicsDevice.DestroyResource(texture.resource);
-            texture.resource = graphicsDevice.device.CreateCommittedResource<ID3D12Resource>(
+            graphicsDevice.DestroyResource(texture.Resource);
+            texture.Resource = graphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
                 HeapProperties.DefaultHeapProperties,
                 HeapFlags.None,
-                ResourceDescription.Texture2D(texture.format, (uint)texture.width, (uint)texture.height, 1, 1),
+                ResourceDescription.Texture2D(texture.Format, (uint)texture.Width, (uint)texture.Height, 1, 1),
                 ResourceStates.CopyDest);
 
-            uint bitsPerPixel = GraphicsDevice.BitsPerPixel(texture.format);
-            int width = texture.width;
-            int height = texture.height;
+            uint bitsPerPixel = GraphicsDevice.BitsPerPixel(texture.Format);
+            int width = texture.Width;
+            int height = texture.Height;
             GCHandle gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned);
             SubresourceData subresourcedata = new SubresourceData();
             subresourcedata.Data = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0);
             subresourcedata.RowPitch = (IntPtr)(width * bitsPerPixel / 8);
             subresourcedata.SlicePitch = (IntPtr)(width * height * bitsPerPixel / 8);
-            UpdateSubresources(commandList, texture.resource, resourceUpload1, 0, 0, 1, new SubresourceData[] { subresourcedata });
+            UpdateSubresources(commandList, texture.Resource, resourceUpload1, 0, 0, 1, new SubresourceData[] { subresourcedata });
             gcHandle.Free();
-            commandList.ResourceBarrierTransition(texture.resource, ResourceStates.CopyDest, ResourceStates.GenericRead);
-            texture.resourceStates = ResourceStates.GenericRead;
+            commandList.ResourceBarrierTransition(texture.Resource, ResourceStates.CopyDest, ResourceStates.GenericRead);
+            texture.ResourceStates = ResourceStates.GenericRead;
         }
 
         public void SetCBV(UploadBuffer uploadBuffer, int offset, int slot)
         {
-            commandList.SetGraphicsRootConstantBufferView(currentRootSignature.cbv[slot], uploadBuffer.resource.GPUVirtualAddress + (ulong)offset);
+            commandList.SetGraphicsRootConstantBufferView(currentRootSignature.ConstantBufferView[slot], uploadBuffer.resource.GPUVirtualAddress + (ulong)offset);
         }
 
-        public void SetPipelineState(PipelineStateObject pipelineStateObject, PSODesc psoDesc)
+        public void SetPipelineState(PipelineStateObject pipelineStateObject, PSODescription psoDesc)
         {
             this.pipelineStateObject = pipelineStateObject;
             this.psoDesc = psoDesc;
@@ -157,7 +158,7 @@ namespace Engine.Rendering
 
         public void ClearRenderTarget(Texture2D texture2D)
         {
-            commandList.ClearRenderTargetView(texture2D.renderTargetView.GetCPUDescriptorHandleForHeapStart(), new Color4(0, 0, 0, 0));
+            commandList.ClearRenderTargetView(texture2D.RenderTargetView.GetCPUDescriptorHandleForHeapStart(), new Color4(0, 0, 0, 0));
         }
 
         public void ClearRenderTargetScreen(Color4 color)
@@ -187,7 +188,7 @@ namespace Engine.Rendering
 
         public void Execute()
         {
-            graphicsDevice.commandQueue.ExecuteCommandList(commandList);
+            graphicsDevice.CommandQueue.ExecuteCommandList(commandList);
         }
 
         unsafe void MemcpySubresource(
@@ -294,7 +295,7 @@ namespace Engine.Rendering
         }
         public RootSignature currentRootSignature;
         public PipelineStateObject pipelineStateObject;
-        public PSODesc psoDesc;
+        public PSODescription psoDesc;
         public UnnamedInputLayout unnamedInputLayout;
 
         public void Dispose()

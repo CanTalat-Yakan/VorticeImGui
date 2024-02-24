@@ -1,18 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+
 using Vortice.Direct3D12;
 
-namespace Engine.Rendering
-{
-    public class UploadBuffer : IDisposable
-    {
-        public ID3D12Resource resource;
-        public int size;
+namespace Engine.Rendering;
 
-        public void Dispose()
-        {
-            resource?.Dispose();
-        }
+public class UploadBuffer : IDisposable
+{
+    public ID3D12Resource resource;
+    public int size;
+
+    public void Dispose()
+    {
+        resource?.Dispose();
     }
 }

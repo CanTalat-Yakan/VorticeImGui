@@ -1,47 +1,50 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+
 using Vortice.Direct3D12;
 using Vortice.DXGI;
 
-namespace Engine.Rendering
+namespace Engine.Rendering;
+
+public class Texture2D : IDisposable
 {
-    public class Texture2D : IDisposable
+    public ID3D12Resource Resource;
+
+    public string Name;
+
+    public ResourceStates ResourceStates;
+
+    public ID3D12DescriptorHeap RenderTargetView;
+    public ID3D12DescriptorHeap DepthStencilView;
+
+    public int Width;
+    public int Height;
+    public int MipLevels;
+
+    public Format Format;
+    public Format RenderTextureViewFormat;
+    public Format DepthStencilViewFormat;
+    public Format UnorderedAccessViewFormat;
+
+    public void StateChange(ID3D12GraphicsCommandList commandList, ResourceStates states)
     {
-        public ID3D12Resource resource;
-        public string Name;
-        public ResourceStates resourceStates;
-        public ID3D12DescriptorHeap renderTargetView;
-        public ID3D12DescriptorHeap depthStencilView;
-        public int width;
-        public int height;
-        public int mipLevels;
-        public Format format;
-        public Format rtvFormat;
-        public Format dsvFormat;
-        public Format uavFormat;
-
-        public void StateChange(ID3D12GraphicsCommandList commandList, ResourceStates states)
+        if (states != ResourceStates)
         {
-            if (states != resourceStates)
-            {
-                commandList.ResourceBarrierTransition(resource, resourceStates, states);
-                resourceStates = states;
-            }
-            else if (states == ResourceStates.UnorderedAccess)
-            {
-                commandList.ResourceBarrierUnorderedAccessView(resource);
-            }
+            commandList.ResourceBarrierTransition(Resource, ResourceStates, states);
+            ResourceStates = states;
         }
-
-        public void Dispose()
+        else if (states == ResourceStates.UnorderedAccess)
         {
-            resource?.Dispose();
-            resource = null;
-            renderTargetView?.Dispose();
-            renderTargetView = null;
-            depthStencilView?.Dispose();
-            depthStencilView = null;
+            commandList.ResourceBarrierUnorderedAccessView(Resource);
         }
+    }
+
+    public void Dispose()
+    {
+        Resource?.Dispose();
+        Resource = null;
+        RenderTargetView?.Dispose();
+        RenderTargetView = null;
+        DepthStencilView?.Dispose();
+        DepthStencilView = null;
     }
 }

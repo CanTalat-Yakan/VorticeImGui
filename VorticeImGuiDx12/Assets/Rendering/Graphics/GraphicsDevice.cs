@@ -12,9 +12,10 @@ namespace Engine.Rendering
 {
     public struct ResourceDelayDestroy
     {
-        public ulong destroyFrame;
-        public ID3D12Object resource;
+        public ulong DestroyFrame;
+        public ID3D12Object Resource;
     }
+
     public class GraphicsDevice : IDisposable
     {
         public static uint BitsPerPixel(Format format)
@@ -163,6 +164,7 @@ namespace Engine.Rendering
                     return 0;
             }
         }
+
         public void Initialize()
         {
 #if DEBUG
@@ -171,111 +173,111 @@ namespace Engine.Rendering
                 pDx12Debug.EnableDebugLayer();
             }
 #endif
-            ThrowIfFailed(DXGI.CreateDXGIFactory1(out dxgiFactory));
+            ThrowIfFailed(DXGI.CreateDXGIFactory1(out DXGIFactory));
             int index1 = 0;
             while (true)
             {
-                var hr = dxgiFactory.EnumAdapterByGpuPreference(index1, GpuPreference.HighPerformance, out adapter);
+                var hr = DXGIFactory.EnumAdapterByGpuPreference(index1, GpuPreference.HighPerformance, out Adapter);
                 if (hr == SharpGen.Runtime.Result.Ok)
                 {
                     break;
                 }
                 index1++;
             }
-            ThrowIfFailed(D3D12.D3D12CreateDevice(this.adapter, out device));
+            ThrowIfFailed(D3D12.D3D12CreateDevice(this.Adapter, out Device));
             CommandQueueDescription description;
             description.Flags = CommandQueueFlags.None;
             description.Type = CommandListType.Direct;
             description.NodeMask = 0;
             description.Priority = 0;
-            ThrowIfFailed(device.CreateCommandQueue(description, out commandQueue));
+            ThrowIfFailed(Device.CreateCommandQueue(description, out CommandQueue));
             DescriptorHeapDescription descriptorHeapDescription;
             descriptorHeapDescription.DescriptorCount = CBVSRVUAVDescriptorCount;
             descriptorHeapDescription.Type = DescriptorHeapType.ConstantBufferViewShaderResourceViewUnorderedAccessView;
             descriptorHeapDescription.Flags = DescriptorHeapFlags.ShaderVisible;
             descriptorHeapDescription.NodeMask = 0;
-            cbvsrvuavHeap.Initialize(this, descriptorHeapDescription);
+            CBVSRVUAVHeap.Initialize(this, descriptorHeapDescription);
 
             descriptorHeapDescription.DescriptorCount = 64;
             descriptorHeapDescription.Type = DescriptorHeapType.DepthStencilView;
             descriptorHeapDescription.Flags = DescriptorHeapFlags.None;
-            dsvHeap.Initialize(this, descriptorHeapDescription);
+            DepthStencilViewHeap.Initialize(this, descriptorHeapDescription);
 
             descriptorHeapDescription.DescriptorCount = 64;
             descriptorHeapDescription.Type = DescriptorHeapType.RenderTargetView;
             descriptorHeapDescription.Flags = DescriptorHeapFlags.None;
-            rtvHeap.Initialize(this, descriptorHeapDescription);
-            waitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+            RenderTextureViewHeap.Initialize(this, descriptorHeapDescription);
+            WaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-            commandAllocators = new List<ID3D12CommandAllocator>();
-            for (int i = 0; i < bufferCount; i++)
+            CommandAllocators = new List<ID3D12CommandAllocator>();
+            for (int i = 0; i < BufferCount; i++)
             {
-                ThrowIfFailed(device.CreateCommandAllocator(CommandListType.Direct, out ID3D12CommandAllocator commandAllocator));
-                commandAllocators.Add(commandAllocator);
+                ThrowIfFailed(Device.CreateCommandAllocator(CommandListType.Direct, out ID3D12CommandAllocator commandAllocator));
+                CommandAllocators.Add(commandAllocator);
             }
-            ThrowIfFailed(device.CreateFence(executeCount, FenceFlags.None, out fence));
-            executeCount++;
+            ThrowIfFailed(Device.CreateFence(ExecuteCount, FenceFlags.None, out Fence));
+            ExecuteCount++;
         }
 
         public void SetupSwapChain(IntPtr hwnd)
         {
-            this.hwnd = hwnd;
+            this.WindowHandle = hwnd;
         }
 
         public void Resize(int width, int height)
         {
-            WaitForGpu();
-            this.width = Math.Max(width, 1);
-            this.height = Math.Max(height, 1);
-            if (swapChain == null)
+            WaitForGPU();
+            this.Width = Math.Max(width, 1);
+            this.Height = Math.Max(height, 1);
+            if (SwapChain == null)
             {
                 SwapChainDescription1 swapChainDescription;
                 swapChainDescription.Width = width;
                 swapChainDescription.Height = height;
-                swapChainDescription.Format = swapChainFormat;
+                swapChainDescription.Format = SwapChainFormat;
                 swapChainDescription.Stereo = false;
                 swapChainDescription.SampleDescription.Count = 1;
                 swapChainDescription.SampleDescription.Quality = 0;
                 swapChainDescription.BufferUsage = Usage.RenderTargetOutput;
-                swapChainDescription.BufferCount = bufferCount;
+                swapChainDescription.BufferCount = BufferCount;
                 swapChainDescription.SwapEffect = SwapEffect.FlipDiscard;
                 swapChainDescription.Flags = SwapChainFlags.AllowTearing;
                 swapChainDescription.Scaling = Scaling.Stretch;
                 swapChainDescription.AlphaMode = AlphaMode.Ignore;
-                IDXGISwapChain1 swapChain1 = dxgiFactory.CreateSwapChainForHwnd(commandQueue, hwnd, swapChainDescription);
-                swapChain = swapChain1.QueryInterface<IDXGISwapChain3>();
+                IDXGISwapChain1 swapChain1 = DXGIFactory.CreateSwapChainForHwnd(CommandQueue, WindowHandle, swapChainDescription);
+                SwapChain = swapChain1.QueryInterface<IDXGISwapChain3>();
                 swapChain1.Dispose();
             }
             else
             {
-                foreach (var screenResource in screenResources)
+                foreach (var screenResource in ScreenResources)
                     screenResource.Dispose();
-                ThrowIfFailed(swapChain.ResizeBuffers(bufferCount, width, height, swapChainFormat, SwapChainFlags.AllowTearing));
+                ThrowIfFailed(SwapChain.ResizeBuffers(BufferCount, width, height, SwapChainFormat, SwapChainFlags.AllowTearing));
             }
-            screenResources = new List<ID3D12Resource>();
-            for (int i = 0; i < bufferCount; i++)
+            ScreenResources = new List<ID3D12Resource>();
+            for (int i = 0; i < BufferCount; i++)
             {
-                ThrowIfFailed(swapChain.GetBuffer(i, out ID3D12Resource res));
-                screenResources.Add(res);
+                ThrowIfFailed(SwapChain.GetBuffer(i, out ID3D12Resource res));
+                ScreenResources.Add(res);
             }
         }
 
         public ID3D12CommandAllocator GetCommandAllocator()
         {
-            return commandAllocators[executeIndex];
+            return CommandAllocators[ExecuteIndex];
         }
 
         public CpuDescriptorHandle GetRenderTargetScreen()
         {
-            CpuDescriptorHandle handle = rtvHeap.GetTempCpuHandle();
-            var res = screenResources[swapChain.CurrentBackBufferIndex];
-            device.CreateRenderTargetView(res, null, handle);
+            CpuDescriptorHandle handle = RenderTextureViewHeap.GetTempCpuHandle();
+            var res = ScreenResources[SwapChain.CurrentBackBufferIndex];
+            Device.CreateRenderTargetView(res, null, handle);
             return handle;
         }
 
         public ID3D12Resource GetScreenResource()
         {
-            return screenResources[swapChain.CurrentBackBufferIndex];
+            return ScreenResources[SwapChain.CurrentBackBufferIndex];
         }
 
         public void Begin()
@@ -286,27 +288,27 @@ namespace Engine.Rendering
         public void Present(bool vsync)
         {
             if (vsync)
-                ThrowIfFailed(swapChain.Present(1, PresentFlags.None));
+                ThrowIfFailed(SwapChain.Present(1, PresentFlags.None));
             else
-                ThrowIfFailed(swapChain.Present(0, PresentFlags.AllowTearing));
-            commandQueue.Signal(fence, executeCount);
-            executeIndex = (executeIndex + 1) % bufferCount;
-            if (fence.CompletedValue < executeCount - (uint)bufferCount + 1)
+                ThrowIfFailed(SwapChain.Present(0, PresentFlags.AllowTearing));
+            CommandQueue.Signal(Fence, ExecuteCount);
+            ExecuteIndex = (ExecuteIndex + 1) % BufferCount;
+            if (Fence.CompletedValue < ExecuteCount - (uint)BufferCount + 1)
             {
-                fence.SetEventOnCompletion(executeCount - (uint)bufferCount + 1, waitHandle);
-                waitHandle.WaitOne();
+                Fence.SetEventOnCompletion(ExecuteCount - (uint)BufferCount + 1, WaitHandle);
+                WaitHandle.WaitOne();
             }
-            DestroyResourceInternal(fence.CompletedValue);
-            executeCount++;
+            DestroyResourceInternal(Fence.CompletedValue);
+            ExecuteCount++;
         }
 
-        public void WaitForGpu()
+        public void WaitForGPU()
         {
-            commandQueue.Signal(fence, executeCount);
-            fence.SetEventOnCompletion(executeCount, waitHandle);
-            waitHandle.WaitOne();
-            DestroyResourceInternal(fence.CompletedValue);
-            executeCount++;
+            CommandQueue.Signal(Fence, ExecuteCount);
+            Fence.SetEventOnCompletion(ExecuteCount, WaitHandle);
+            WaitHandle.WaitOne();
+            DestroyResourceInternal(Fence.CompletedValue);
+            ExecuteCount++;
         }
 
         public void CreateRootSignature(RootSignature rootSignature, IList<RootSignatureParamP> types)
@@ -347,9 +349,9 @@ namespace Engine.Rendering
             int cbvCount = 0;
             int srvCount = 0;
             int uavCount = 0;
-            rootSignature.cbv.Clear();
-            rootSignature.srv.Clear();
-            rootSignature.uav.Clear();
+            rootSignature.ConstantBufferView.Clear();
+            rootSignature.ShaderResourceView.Clear();
+            rootSignature.UnorderedAccessView.Clear();
 
             for (int i = 0; i < types.Count; i++)
             {
@@ -358,32 +360,32 @@ namespace Engine.Rendering
                 {
                     case RootSignatureParamP.CBV:
                         rootParameters[i] = new RootParameter1(RootParameterType.ConstantBufferView, new RootDescriptor1(cbvCount, 0), ShaderVisibility.All);
-                        rootSignature.cbv[cbvCount] = i;
+                        rootSignature.ConstantBufferView[cbvCount] = i;
                         cbvCount++;
                         break;
                     case RootSignatureParamP.SRV:
                         rootParameters[i] = new RootParameter1(RootParameterType.ShaderResourceView, new RootDescriptor1(srvCount, 0), ShaderVisibility.All);
-                        rootSignature.srv[srvCount] = i;
+                        rootSignature.ShaderResourceView[srvCount] = i;
                         srvCount++;
                         break;
                     case RootSignatureParamP.UAV:
                         rootParameters[i] = new RootParameter1(RootParameterType.UnorderedAccessView, new RootDescriptor1(uavCount, 0), ShaderVisibility.All);
-                        rootSignature.uav[uavCount] = i;
+                        rootSignature.UnorderedAccessView[uavCount] = i;
                         uavCount++;
                         break;
                     case RootSignatureParamP.CBVTable:
                         rootParameters[i] = new RootParameter1(new RootDescriptorTable1(new DescriptorRange1(DescriptorRangeType.ConstantBufferView, 1, cbvCount)), ShaderVisibility.All);
-                        rootSignature.cbv[cbvCount] = i;
+                        rootSignature.ConstantBufferView[cbvCount] = i;
                         cbvCount++;
                         break;
                     case RootSignatureParamP.SRVTable:
                         rootParameters[i] = new RootParameter1(new RootDescriptorTable1(new DescriptorRange1(DescriptorRangeType.ShaderResourceView, 1, srvCount)), ShaderVisibility.All);
-                        rootSignature.srv[srvCount] = i;
+                        rootSignature.ShaderResourceView[srvCount] = i;
                         srvCount++;
                         break;
                     case RootSignatureParamP.UAVTable:
                         rootParameters[i] = new RootParameter1(new RootDescriptorTable1(new DescriptorRange1(DescriptorRangeType.UnorderedAccessView, 1, uavCount)), ShaderVisibility.All);
-                        rootSignature.uav[uavCount] = i;
+                        rootSignature.UnorderedAccessView[uavCount] = i;
                         uavCount++;
                         break;
                 }
@@ -394,74 +396,74 @@ namespace Engine.Rendering
             rootSignatureDescription.Flags = RootSignatureFlags.AllowInputAssemblerInputLayout;
             rootSignatureDescription.Parameters = rootParameters;
 
-            rootSignature.rootSignature = device.CreateRootSignature<ID3D12RootSignature>(0, rootSignatureDescription);
+            rootSignature.Resource = Device.CreateRootSignature<ID3D12RootSignature>(0, rootSignatureDescription);
         }
 
         public void RenderTexture(Texture2D texture)
         {
             ResourceDescription resourceDescription = new ResourceDescription
             {
-                Width = (ulong)texture.width,
-                Height = texture.height,
+                Width = (ulong)texture.Width,
+                Height = texture.Height,
                 MipLevels = 1,
                 SampleDescription = new SampleDescription(1, 0),
                 Dimension = ResourceDimension.Texture2D,
                 DepthOrArraySize = 1,
-                Format = texture.format,
+                Format = texture.Format,
             };
-            if (texture.dsvFormat != 0)
+            if (texture.DepthStencilViewFormat != 0)
             {
-                DestroyResource(texture.resource);
+                DestroyResource(texture.Resource);
                 resourceDescription.Flags = ResourceFlags.AllowDepthStencil;
-                ThrowIfFailed(device.CreateCommittedResource<ID3D12Resource>(HeapProperties.DefaultHeapProperties,
+                ThrowIfFailed(Device.CreateCommittedResource<ID3D12Resource>(HeapProperties.DefaultHeapProperties,
                      HeapFlags.None,
                      resourceDescription,
                      ResourceStates.GenericRead,
-                     new ClearValue(texture.dsvFormat, new DepthStencilValue(1.0f, 0)), out texture.resource));
-                if (texture.depthStencilView == null)
+                     new ClearValue(texture.DepthStencilViewFormat, new DepthStencilValue(1.0f, 0)), out texture.Resource));
+                if (texture.DepthStencilView == null)
                 {
                     DescriptorHeapDescription descriptorHeapDescription;
                     descriptorHeapDescription.DescriptorCount = 1;
                     descriptorHeapDescription.Type = DescriptorHeapType.DepthStencilView;
                     descriptorHeapDescription.Flags = DescriptorHeapFlags.None;
                     descriptorHeapDescription.NodeMask = 0;
-                    ThrowIfFailed(device.CreateDescriptorHeap(descriptorHeapDescription, out texture.depthStencilView));
+                    ThrowIfFailed(Device.CreateDescriptorHeap(descriptorHeapDescription, out texture.DepthStencilView));
                 }
 
-                device.CreateDepthStencilView(texture.resource, null, texture.depthStencilView.GetCPUDescriptorHandleForHeapStart());
+                Device.CreateDepthStencilView(texture.Resource, null, texture.DepthStencilView.GetCPUDescriptorHandleForHeapStart());
             }
-            else if (texture.rtvFormat != 0)
+            else if (texture.RenderTextureViewFormat != 0)
             {
-                DestroyResource(texture.resource);
+                DestroyResource(texture.Resource);
                 resourceDescription.Flags = ResourceFlags.AllowRenderTarget | ResourceFlags.AllowUnorderedAccess;
-                ThrowIfFailed(device.CreateCommittedResource<ID3D12Resource>(HeapProperties.DefaultHeapProperties,
+                ThrowIfFailed(Device.CreateCommittedResource<ID3D12Resource>(HeapProperties.DefaultHeapProperties,
                      HeapFlags.None,
                      resourceDescription,
                      ResourceStates.GenericRead,
-                     new ClearValue(texture.dsvFormat, new Color4(0, 0, 0, 0)), out texture.resource));
-                if (texture.renderTargetView == null)
+                     new ClearValue(texture.DepthStencilViewFormat, new Color4(0, 0, 0, 0)), out texture.Resource));
+                if (texture.RenderTargetView == null)
                 {
                     DescriptorHeapDescription descriptorHeapDescription;
                     descriptorHeapDescription.DescriptorCount = 1;
                     descriptorHeapDescription.Type = DescriptorHeapType.RenderTargetView;
                     descriptorHeapDescription.Flags = DescriptorHeapFlags.None;
                     descriptorHeapDescription.NodeMask = 0;
-                    ThrowIfFailed(device.CreateDescriptorHeap(descriptorHeapDescription, out texture.renderTargetView));
+                    ThrowIfFailed(Device.CreateDescriptorHeap(descriptorHeapDescription, out texture.RenderTargetView));
                 }
 
-                device.CreateRenderTargetView(texture.resource, null, texture.renderTargetView.GetCPUDescriptorHandleForHeapStart());
+                Device.CreateRenderTargetView(texture.Resource, null, texture.RenderTargetView.GetCPUDescriptorHandleForHeapStart());
             }
             else
             {
                 throw new NotImplementedException();
             }
-            texture.resourceStates = ResourceStates.GenericRead;
+            texture.ResourceStates = ResourceStates.GenericRead;
         }
 
         public void CreateUploadBuffer(UploadBuffer uploadBuffer, int size)
         {
             DestroyResource(uploadBuffer.resource);
-            uploadBuffer.resource = device.CreateCommittedResource<ID3D12Resource>(
+            uploadBuffer.resource = Device.CreateCommittedResource<ID3D12Resource>(
                 HeapProperties.UploadHeapProperties,
                 HeapFlags.None,
                 ResourceDescription.Buffer(new ResourceAllocationInfo((ulong)size, 0)),
@@ -472,45 +474,46 @@ namespace Engine.Rendering
         public void DestroyResource(ID3D12Object res)
         {
             if (res != null)
-                delayDestroy.Enqueue(new ResourceDelayDestroy { resource = res, destroyFrame = executeCount });
+                DelayDestroy.Enqueue(new ResourceDelayDestroy { Resource = res, DestroyFrame = ExecuteCount });
         }
 
         private void DestroyResourceInternal(ulong completedFrame)
         {
-            while (delayDestroy.Count > 0)
-                if (delayDestroy.Peek().destroyFrame <= completedFrame)
+            while (DelayDestroy.Count > 0)
+                if (DelayDestroy.Peek().DestroyFrame <= completedFrame)
                 {
-                    var p = delayDestroy.Dequeue();
-                    p.resource?.Dispose();
+                    var p = DelayDestroy.Dequeue();
+                    p.Resource?.Dispose();
                 }
                 else
                     break;
         }
 
-        public ID3D12Device2 device;
-        public IDXGIAdapter adapter;
-        public IDXGIFactory7 dxgiFactory;
-        public ID3D12CommandQueue commandQueue;
-        public DescriptorHeapX cbvsrvuavHeap = new DescriptorHeapX();
-        public DescriptorHeapX dsvHeap = new DescriptorHeapX();
-        public DescriptorHeapX rtvHeap = new DescriptorHeapX();
-        public IDXGISwapChain3 swapChain;
-        public List<ID3D12CommandAllocator> commandAllocators;
-        public EventWaitHandle waitHandle;
-        public ID3D12Fence fence;
+        public ID3D12Device2 Device;
+        public IDXGIAdapter Adapter;
+        public IDXGIFactory7 DXGIFactory;
+        public ID3D12CommandQueue CommandQueue;
+        public DescriptorHeapX CBVSRVUAVHeap = new();
+        public DescriptorHeapX DepthStencilViewHeap = new();
+        public DescriptorHeapX RenderTextureViewHeap = new();
+        public IDXGISwapChain3 SwapChain;
+        public List<ID3D12CommandAllocator> CommandAllocators;
+        public EventWaitHandle WaitHandle;
+        public ID3D12Fence Fence;
 
-        public Queue<ResourceDelayDestroy> delayDestroy = new Queue<ResourceDelayDestroy>();
+        public Queue<ResourceDelayDestroy> DelayDestroy = new();
 
-        public int executeIndex = 0;
-        public ulong executeCount = 3;//greater equal than 'bufferCount'
+        public int ExecuteIndex = 0;
+        public ulong ExecuteCount = 3;//greater equal than 'bufferCount'
 
-        public int width;
-        public int height;
-        public IntPtr hwnd;
+        public int Width;
+        public int Height;
+        public IntPtr WindowHandle;
 
-        public Format swapChainFormat = Format.R8G8B8A8_UNorm;
-        public List<ID3D12Resource> screenResources;
-        public int bufferCount = 3;
+        public Format SwapChainFormat = Format.R8G8B8A8_UNorm;
+        public List<ID3D12Resource> ScreenResources;
+
+        public int BufferCount = 3;
         public int CBVSRVUAVDescriptorCount = 65536;
 
         public static void ThrowIfFailed(SharpGen.Runtime.Result hr)
@@ -523,26 +526,26 @@ namespace Engine.Rendering
 
         public void Dispose()
         {
-            WaitForGpu();
-            while (delayDestroy.Count > 0)
+            WaitForGPU();
+            while (DelayDestroy.Count > 0)
             {
-                var p = delayDestroy.Dequeue();
-                p.resource?.Dispose();
+                var p = DelayDestroy.Dequeue();
+                p.Resource?.Dispose();
             }
-            foreach (var commandAllocator in commandAllocators)
+            foreach (var commandAllocator in CommandAllocators)
                 commandAllocator.Dispose();
-            if (screenResources != null)
-                foreach (var screenResource in screenResources)
+            if (ScreenResources != null)
+                foreach (var screenResource in ScreenResources)
                     screenResource.Dispose();
-            dxgiFactory?.Dispose();
-            commandQueue?.Dispose();
-            cbvsrvuavHeap?.Dispose();
-            dsvHeap?.Dispose();
-            rtvHeap?.Dispose();
-            swapChain?.Dispose();
-            fence?.Dispose();
-            device?.Dispose();
-            adapter?.Dispose();
+            DXGIFactory?.Dispose();
+            CommandQueue?.Dispose();
+            CBVSRVUAVHeap?.Dispose();
+            DepthStencilViewHeap?.Dispose();
+            RenderTextureViewHeap?.Dispose();
+            SwapChain?.Dispose();
+            Fence?.Dispose();
+            Device?.Dispose();
+            Adapter?.Dispose();
         }
     }
 }
