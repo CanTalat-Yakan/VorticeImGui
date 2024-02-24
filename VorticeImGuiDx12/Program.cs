@@ -5,6 +5,7 @@ using Vortice.Mathematics;
 
 using Engine.GUI;
 using Engine.Data;
+using Engine.Graphics;
 
 namespace Engine;
 
@@ -43,7 +44,7 @@ public sealed partial class Program
     {
         ImGuiRender.Context = Context;
 
-        Context.LoadDefaultResource();
+        ImGuiRender.LoadDefaultResource();
 
         Context.GraphicsDevice.Initialize(true);
         Context.UploadBuffer.Initialize(Context.GraphicsDevice, 67108864);//64 MB

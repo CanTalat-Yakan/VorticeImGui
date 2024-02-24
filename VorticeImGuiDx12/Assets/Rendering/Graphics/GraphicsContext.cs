@@ -8,6 +8,8 @@ using Vortice.Mathematics;
 using Engine.Buffer;
 using Engine.DataTypes;
 using Engine.Helper;
+using Vortice.Dxc;
+using System.IO;
 
 namespace Engine.Graphics;
 
@@ -46,6 +48,87 @@ public sealed partial class GraphicsContext : IDisposable
         CommandList.DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
     }
 
+    public void ScreenBeginRender()
+    {
+        CommandList.ResourceBarrierTransition(GraphicsDevice.GetScreenResource(), ResourceStates.Present, ResourceStates.RenderTarget);
+    }
+
+    public void ScreenEndRender()
+    {
+        CommandList.ResourceBarrierTransition(GraphicsDevice.GetScreenResource(), ResourceStates.RenderTarget, ResourceStates.Present);
+    }
+
+    public void BeginCommand()
+    {
+        CommandList.Reset(GraphicsDevice.GetCommandAllocator());
+    }
+
+    public void EndCommand()
+    {
+        CommandList.Close();
+    }
+
+    public void Execute()
+    {
+        GraphicsDevice.CommandQueue.ExecuteCommandList(CommandList);
+    }
+
+    public void UploadTexture(Texture2D texture, byte[] data)
+    {
+        ID3D12Resource resourceUpload1 = GraphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
+            new HeapProperties(HeapType.Upload),
+            HeapFlags.None,
+            ResourceDescription.Buffer((ulong)data.Length),
+            ResourceStates.GenericRead);
+        GraphicsDevice.DestroyResource(resourceUpload1);
+
+        GraphicsDevice.DestroyResource(texture.Resource);
+        texture.Resource = GraphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
+            HeapProperties.DefaultHeapProperties,
+            HeapFlags.None,
+            ResourceDescription.Texture2D(texture.Format, (uint)texture.Width, (uint)texture.Height, 1, 1),
+            ResourceStates.CopyDest);
+
+        uint bitsPerPixel = GraphicsDevice.GetBitsPerPixel(texture.Format);
+
+        int width = texture.Width;
+        int height = texture.Height;
+
+        SubresourceData subresourcedata = new()
+        {
+            Data = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0),
+            RowPitch = (IntPtr)(width * bitsPerPixel / 8),
+            SlicePitch = (IntPtr)(width * height * bitsPerPixel / 8),
+        };
+        UpdateSubresources(CommandList, texture.Resource, resourceUpload1, 0, 0, 1, [subresourcedata]);
+
+        GCHandle gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned);
+        gcHandle.Free();
+
+        CommandList.ResourceBarrierTransition(texture.Resource, ResourceStates.CopyDest, ResourceStates.GenericRead);
+        texture.ResourceStates = ResourceStates.GenericRead;
+    }
+
+    public ReadOnlyMemory<byte> LoadShader(DxcShaderStage shaderStage, string filePath, string entryPoint)
+    {
+        string directoryPath = AppContext.BaseDirectory + @"Assets\Resources\Shaders\";
+
+        string directory = Path.GetDirectoryName(filePath);
+        string shaderSource = File.ReadAllText(filePath);
+
+        using (ShaderIncludeHandler includeHandler = new(directoryPath, directory))
+        {
+            using IDxcResult results = DxcCompiler.Compile(shaderStage, shaderSource, entryPoint, includeHandler: includeHandler);
+            if (results.GetStatus().Failure)
+                throw new Exception(results.GetErrors());
+
+            return results.GetObjectBytecodeMemory();
+        }
+    }
+}
+
+public sealed partial class GraphicsContext : IDisposable
+{
     public void SetDescriptorHeapDefault()
     {
         CommandList.SetDescriptorHeaps(1, new[] { GraphicsDevice.CBVSRVUAVHeap.Heap });
@@ -138,42 +221,6 @@ public sealed partial class GraphicsContext : IDisposable
         UnnamedInputLayout = mesh.UnnamedInputLayout;
     }
 
-    public void UploadTexture(Texture2D texture, byte[] data)
-    {
-        ID3D12Resource resourceUpload1 = GraphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
-            new HeapProperties(HeapType.Upload),
-            HeapFlags.None,
-            ResourceDescription.Buffer((ulong)data.Length),
-            ResourceStates.GenericRead);
-        GraphicsDevice.DestroyResource(resourceUpload1);
-
-        GraphicsDevice.DestroyResource(texture.Resource);
-        texture.Resource = GraphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
-            HeapProperties.DefaultHeapProperties,
-            HeapFlags.None,
-            ResourceDescription.Texture2D(texture.Format, (uint)texture.Width, (uint)texture.Height, 1, 1),
-            ResourceStates.CopyDest);
-
-        uint bitsPerPixel = GraphicsDevice.GetBitsPerPixel(texture.Format);
-
-        int width = texture.Width;
-        int height = texture.Height;
-
-        SubresourceData subresourcedata = new()
-        {
-            Data = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0),
-            RowPitch = (IntPtr)(width * bitsPerPixel / 8),
-            SlicePitch = (IntPtr)(width * height * bitsPerPixel / 8),
-        };
-        UpdateSubresources(CommandList, texture.Resource, resourceUpload1, 0, 0, 1, [subresourcedata]);
-
-        GCHandle gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned);
-        gcHandle.Free();
-
-        CommandList.ResourceBarrierTransition(texture.Resource, ResourceStates.CopyDest, ResourceStates.GenericRead);
-        texture.ResourceStates = ResourceStates.GenericRead;
-    }
-
     public void SetConstantBufferView(UploadBuffer uploadBuffer, int offset, int slot)
     {
         CommandList.SetGraphicsRootConstantBufferView(CurrentRootSignature.ConstantBufferView[slot], uploadBuffer.Resource.GPUVirtualAddress + (ulong)offset);
@@ -193,31 +240,6 @@ public sealed partial class GraphicsContext : IDisposable
     public void ClearRenderTargetScreen(Color4 color)
     {
         CommandList.ClearRenderTargetView(GraphicsDevice.GetRenderTargetScreen(), color);
-    }
-
-    public void ScreenBeginRender()
-    {
-        CommandList.ResourceBarrierTransition(GraphicsDevice.GetScreenResource(), ResourceStates.Present, ResourceStates.RenderTarget);
-    }
-
-    public void ScreenEndRender()
-    {
-        CommandList.ResourceBarrierTransition(GraphicsDevice.GetScreenResource(), ResourceStates.RenderTarget, ResourceStates.Present);
-    }
-
-    public void BeginCommand()
-    {
-        CommandList.Reset(GraphicsDevice.GetCommandAllocator());
-    }
-
-    public void EndCommand()
-    {
-        CommandList.Close();
-    }
-
-    public void Execute()
-    {
-        GraphicsDevice.CommandQueue.ExecuteCommandList(CommandList);
     }
 }
 

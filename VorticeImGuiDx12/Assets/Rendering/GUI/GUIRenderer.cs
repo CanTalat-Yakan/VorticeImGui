@@ -7,121 +7,131 @@ using Vortice.DXGI;
 
 using Engine.Buffer;
 using Engine.DataTypes;
+using Engine.Graphics;
 
 using ImDrawIdx = System.UInt16;
+using Vortice.Dxc;
 
-namespace Engine.GUI
+namespace Engine.GUI;
+
+public unsafe sealed partial class GUIRenderer
 {
-    unsafe public class GUIRenderer
+    public CommonContext Context;
+
+    public InputLayoutDescription InputLayoutDescription;
+
+    public Texture2D FontTexture;
+    public Mesh ImGuiMesh;
+
+    public PipelineStateObjectDescription PipelineStateObjectDescription = new()
     {
-        public CommonContext Context;
+        InputLayout = "ImGui",
+        CullMode = CullMode.None,
+        RenderTargetFormat = Format.R8G8B8A8_UNorm,
+        RenderTargetCount = 1,
+        PrimitiveTopologyType = PrimitiveTopologyType.Triangle,
+        BlendState = "Alpha",
+    };
 
-        public InputLayoutDescription InputLayoutDescription;
+    public void LoadDefaultResource()
+    {
+        string directoryPath = AppContext.BaseDirectory + @"Assets\Resources\Shaders\";
 
-        public Texture2D FontTexture;
-        public Mesh ImGuiMesh;
+        Context.VertexShaders["ImGui"] = new Shader() { CompiledCode = Context.GraphicsContext.LoadShader(DxcShaderStage.Vertex, directoryPath + "ImGui.hlsl", "VS"), Name = "ImGui VS" };
+        Context.PixelShaders["ImGui"] = new Shader() { CompiledCode = Context.GraphicsContext.LoadShader(DxcShaderStage.Pixel, directoryPath + "ImGui.hlsl", "PS"), Name = "ImGui PS" };
+        Context.PipelineStateObjects["ImGui"] = new PipelineStateObject(Context.VertexShaders["ImGui"], Context.PixelShaders["ImGui"]); ;
+    }
 
-        public PipelineStateObjectDescription PipelineStateObjectDescription = new()
+    public void Initialize()
+    {
+        Context.ImGuiContext = ImGui.CreateContext();
+        ImGui.SetCurrentContext(Context.ImGuiContext);
+
+        var io = ImGui.GetIO();
+        io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
+
+        FontTexture = new Texture2D();
+        Context.RenderTargets["ImGui Font"] = FontTexture;
+
+        //ImFontPtr font = io.Fonts.AddFontFromFileTTF("c:\\Windows\\Fonts\\SIMHEI.ttf", 14, null, io.Fonts.GetGlyphRangesChineseFull());
+
+        io.Fonts.GetTexDataAsRGBA32(out byte* pixels, out int width, out int height, out int bytesPerPixel);
+        io.Fonts.TexID = Context.GetIDFromString("ImGui Font");
+
+        FontTexture.Width = width;
+        FontTexture.Height = height;
+        FontTexture.MipLevels = 1;
+        FontTexture.Format = Format.R8G8B8A8_UNorm;
+        ImGuiMesh = Context.GetMesh("ImGui Mesh");
+
+        GPUUpload gpuUpload = new GPUUpload();
+        gpuUpload.texture2D = FontTexture;
+        gpuUpload.format = Format.R8G8B8A8_UNorm;
+        gpuUpload.textureData = new byte[width * height * bytesPerPixel];
+
+        Span<byte> data = new(pixels, gpuUpload.textureData.Length);
+        data.CopyTo(gpuUpload.textureData);
+
+        Context.UploadQueue.Enqueue(gpuUpload);
+    }
+
+    public void Render()
+    {
+        ImGui.NewFrame();
+        ImGui.ShowDemoWindow();
+        ImGui.Render();
+
+        var data = ImGui.GetDrawData();
+        var graphicsContext = Context.GraphicsContext;
+
+        float L = data.DisplayPos.X;
+        float R = data.DisplayPos.X + data.DisplaySize.X;
+        float T = data.DisplayPos.Y;
+        float B = data.DisplayPos.Y + data.DisplaySize.Y;
+        float[] mvp =
         {
-            InputLayout = "ImGui",
-            CullMode = CullMode.None,
-            RenderTargetFormat = Format.R8G8B8A8_UNorm,
-            RenderTargetCount = 1,
-            PrimitiveTopologyType = PrimitiveTopologyType.Triangle,
-            BlendState = "Alpha",
+                2.0f/(R-L),   0.0f,           0.0f,       0.0f,
+                0.0f,         2.0f/(T-B),     0.0f,       0.0f,
+                0.0f,         0.0f,           0.5f,       0.0f,
+                (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f,
         };
+        int index1 = Context.UploadBuffer.Upload<float>(mvp);
+        graphicsContext.SetRootSignature(Context.CreateRootSignatureFromString("Cssss"));
+        graphicsContext.SetPipelineState(Context.PipelineStateObjects["ImGui"], PipelineStateObjectDescription);
+        Context.UploadBuffer.SetConstantBufferView(graphicsContext, index1, 0);
+        graphicsContext.CommandList.IASetPrimitiveTopology(Vortice.Direct3D.PrimitiveTopology.TriangleList);
 
-        public void Initialize()
+        Vector2 clipOffset = data.DisplayPos;
+        for (int i = 0; i < data.CmdListsCount; i++)
         {
-            Context.ImGuiContext = ImGui.CreateContext();
-            ImGui.SetCurrentContext(Context.ImGuiContext);
+            var commandList = data.CmdListsRange[i];
 
-            var io = ImGui.GetIO();
-            io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
+            var vertexBytes = commandList.VtxBuffer.Size * sizeof(ImDrawVert);
+            var indexBytes = commandList.IdxBuffer.Size * sizeof(ImDrawIdx);
 
-            FontTexture = new Texture2D();
-            Context.RenderTargets["ImGui Font"] = FontTexture;
+            Context.UploadBuffer.UploadMeshIndex(graphicsContext, ImGuiMesh, new Span<byte>(commandList.IdxBuffer.Data.ToPointer(), indexBytes), Format.R16_UInt);
+            Context.UploadBuffer.UploadVertexBuffer(graphicsContext, ref ImGuiMesh.Vertex, new Span<byte>(commandList.VtxBuffer.Data.ToPointer(), vertexBytes));
 
-            //ImFontPtr font = io.Fonts.AddFontFromFileTTF("c:\\Windows\\Fonts\\SIMHEI.ttf", 14, null, io.Fonts.GetGlyphRangesChineseFull());
+            ImGuiMesh.Vertices["POSITION"] = new VertexBuffer() { offset = 0, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
+            ImGuiMesh.Vertices["TEXCOORD"] = new VertexBuffer() { offset = 8, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
+            ImGuiMesh.Vertices["COLOR"] = new VertexBuffer() { offset = 16, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
 
-            io.Fonts.GetTexDataAsRGBA32(out byte* pixels, out int width, out int height, out int bytesPerPixel);
-            io.Fonts.TexID = Context.GetStringID("ImGui Font");
+            graphicsContext.SetMesh(ImGuiMesh);
 
-            FontTexture.Width = width;
-            FontTexture.Height = height;
-            FontTexture.MipLevels = 1;
-            FontTexture.Format = Format.R8G8B8A8_UNorm;
-            ImGuiMesh = Context.GetMesh("ImGui Mesh");
-
-            GPUUpload gpuUpload = new GPUUpload();
-            gpuUpload.texture2D = FontTexture;
-            gpuUpload.format = Format.R8G8B8A8_UNorm;
-            gpuUpload.textureData = new byte[width * height * bytesPerPixel];
-
-            Span<byte> data = new(pixels, gpuUpload.textureData.Length);
-            data.CopyTo(gpuUpload.textureData);
-
-            Context.UploadQueue.Enqueue(gpuUpload);
-        }
-
-        public void Render()
-        {
-            ImGui.NewFrame();
-            ImGui.ShowDemoWindow();
-            ImGui.Render();
-
-            var data = ImGui.GetDrawData();
-            var graphicsContext = Context.GraphicsContext;
-
-            float L = data.DisplayPos.X;
-            float R = data.DisplayPos.X + data.DisplaySize.X;
-            float T = data.DisplayPos.Y;
-            float B = data.DisplayPos.Y + data.DisplaySize.Y;
-            float[] mvp =
+            for (int j = 0; j < commandList.CmdBuffer.Size; j++)
             {
-                    2.0f/(R-L),   0.0f,           0.0f,       0.0f,
-                    0.0f,         2.0f/(T-B),     0.0f,       0.0f,
-                    0.0f,         0.0f,           0.5f,       0.0f,
-                    (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f,
-            };
-            int index1 = Context.UploadBuffer.Upload<float>(mvp);
-            graphicsContext.SetRootSignature(Context.CreateRootSignatureFromString("Cssss"));
-            graphicsContext.SetPipelineState(Context.PipelineStateObjects["ImGui"], PipelineStateObjectDescription);
-            Context.UploadBuffer.SetConstantBufferView(graphicsContext, index1, 0);
-            graphicsContext.CommandList.IASetPrimitiveTopology(Vortice.Direct3D.PrimitiveTopology.TriangleList);
+                var cmd = commandList.CmdBuffer[j];
 
-            Vector2 clipOffset = data.DisplayPos;
-            for (int i = 0; i < data.CmdListsCount; i++)
-            {
-                var commandList = data.CmdListsRange[i];
-
-                var vertexBytes = commandList.VtxBuffer.Size * sizeof(ImDrawVert);
-                var indexBytes = commandList.IdxBuffer.Size * sizeof(ImDrawIdx);
-
-                Context.UploadBuffer.UploadMeshIndex(graphicsContext, ImGuiMesh, new Span<byte>(commandList.IdxBuffer.Data.ToPointer(), indexBytes), Format.R16_UInt);
-                Context.UploadBuffer.UploadVertexBuffer(graphicsContext, ref ImGuiMesh.Vertex, new Span<byte>(commandList.VtxBuffer.Data.ToPointer(), vertexBytes));
-
-                ImGuiMesh.Vertices["POSITION"] = new VertexBuffer() { offset = 0, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
-                ImGuiMesh.Vertices["TEXCOORD"] = new VertexBuffer() { offset = 8, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
-                ImGuiMesh.Vertices["COLOR"] = new VertexBuffer() { offset = 16, resource = ImGuiMesh.Vertex, sizeInByte = vertexBytes, stride = sizeof(ImDrawVert) };
-
-                graphicsContext.SetMesh(ImGuiMesh);
-
-                for (int j = 0; j < commandList.CmdBuffer.Size; j++)
+                if (cmd.UserCallback != IntPtr.Zero)
+                    throw new NotImplementedException("user callbacks not implemented");
+                else
                 {
-                    var cmd = commandList.CmdBuffer[j];
+                    graphicsContext.SetShaderResourceView(Context.GetTextureByStringID(cmd.TextureId), 0);
 
-                    if (cmd.UserCallback != IntPtr.Zero)
-                        throw new NotImplementedException("user callbacks not implemented");
-                    else
-                    {
-                        graphicsContext.SetShaderResourceView(Context.GetTextureByStringID(cmd.TextureId), 0);
+                    var rect = new Vortice.RawRect((int)(cmd.ClipRect.X - clipOffset.X), (int)(cmd.ClipRect.Y - clipOffset.Y), (int)(cmd.ClipRect.Z - clipOffset.X), (int)(cmd.ClipRect.W - clipOffset.Y));
+                    graphicsContext.CommandList.RSSetScissorRects(new[] { rect });
 
-                        var rect = new Vortice.RawRect((int)(cmd.ClipRect.X - clipOffset.X), (int)(cmd.ClipRect.Y - clipOffset.Y), (int)(cmd.ClipRect.Z - clipOffset.X), (int)(cmd.ClipRect.W - clipOffset.Y));
-                        graphicsContext.CommandList.RSSetScissorRects(new[] { rect });
-
-                        graphicsContext.DrawIndexedInstanced((int)cmd.ElemCount, 1, (int)(cmd.IdxOffset), (int)(cmd.VtxOffset), 0);
-                    }
+                    graphicsContext.DrawIndexedInstanced((int)cmd.ElemCount, 1, (int)(cmd.IdxOffset), (int)(cmd.VtxOffset), 0);
                 }
             }
         }

@@ -16,12 +16,16 @@
 	</PropertyGroup>
 	
 	<ItemGroup>
+		<None Remove="Assets\Resources\Shaders\Include\Common.hlsli" />
 		<None Remove="FodyWeavers.xml" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Content Include="Assets\Resources\Shaders\ImGui.hlsl">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Assets\Resources\Shaders\Include\Common.hlsli">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	</ItemGroup>
 
