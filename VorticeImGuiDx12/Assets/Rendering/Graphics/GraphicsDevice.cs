@@ -9,7 +9,6 @@ using Vortice.Mathematics;
 
 using Engine.Data;
 using Engine.Helper;
-using System.Drawing;
 
 namespace Engine.Graphics;
 
