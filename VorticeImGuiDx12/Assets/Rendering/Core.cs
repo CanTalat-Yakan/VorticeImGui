@@ -10,12 +10,12 @@ using Vortice.DXGI;
 using Engine.Graphics;
 using Engine.GUI;
 
-namespace Engine.ResourcesManage
+namespace Engine.Rendering
 {
-    public class CommonContext : IDisposable
+    public class Core : IDisposable
     {
         public GraphicsDevice Device = new();
-        public GraphicsContext GraphicsContext = new();
+        public Renderer GraphicsContext = new();
         public Dictionary<string, Shader> VertexShaders = new();
         public Dictionary<string, Shader> PixelShaders = new();
         public Dictionary<string, RootSignature> RootSignatures = new();
@@ -36,7 +36,7 @@ namespace Engine.ResourcesManage
         {
             string directoryPath = AppContext.BaseDirectory + @"Assets\Resources\Shaders\";
 
-            VertexShaders["ImGui"] = new Shader() { CompiledCode = LoadShader(DxcShaderStage.Vertex, directoryPath+"ImGui.hlsl", "VS"), Name = "ImGui VS" };
+            VertexShaders["ImGui"] = new Shader() { CompiledCode = LoadShader(DxcShaderStage.Vertex, directoryPath + "ImGui.hlsl", "VS"), Name = "ImGui VS" };
             PixelShaders["ImGui"] = new Shader() { CompiledCode = LoadShader(DxcShaderStage.Pixel, directoryPath + "ImGui.hlsl", "PS"), Name = "ImGui PS" };
             PipelineStateObjects["ImGui"] = new PipelineStateObject(VertexShaders["ImGui"], PixelShaders["ImGui"]); ;
         }
@@ -57,12 +57,12 @@ namespace Engine.ResourcesManage
             return pointer;
         }
 
-        public string IDToString(nint pointer) => 
+        public string IDToString(nint pointer) =>
             PointerToString[pointer];
 
-        public Texture2D GetTextureByStringID(nint pointer) => 
+        public Texture2D GetTextureByStringID(nint pointer) =>
             RenderTargets[PointerToString[pointer]];
-        
+
         public RootSignature CreateRootSignatureFromString(string s)
         {
             RootSignature rootSignature;
@@ -111,7 +111,7 @@ namespace Engine.ResourcesManage
             var result = DxcCompiler.Compile(shaderStage, File.ReadAllText(path), entryPoint);
             if (result.GetStatus().Failure)
                 throw new Exception(result.GetErrors());
-            
+
             return result.GetObjectBytecodeMemory();
         }
 
@@ -124,12 +124,12 @@ namespace Engine.ResourcesManage
                 mesh = new Mesh();
                 mesh.UnnamedInputLayout = new UnnamedInputLayout()
                 {
-                    inputElementDescriptions = new[]
-                    {
-                     new InputElementDescription("POSITION", 0, Format.R32G32_Float, 0),
-                     new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float, 1),
-                     new InputElementDescription("COLOR", 0, Format.R8G8B8A8_UNorm, 2)
-                     }
+                    inputElementDescriptions =
+                    [
+                        new InputElementDescription("POSITION", 0, Format.R32G32_Float, 0),
+                        new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float, 1),
+                        new InputElementDescription("COLOR", 0, Format.R8G8B8A8_UNorm, 2)
+                    ]
                 };
                 Meshes[name] = mesh;
 
@@ -137,7 +137,7 @@ namespace Engine.ResourcesManage
             }
         }
 
-        public void GPUUploadData(GraphicsContext graphicsContext1)
+        public void GPUUploadData(Renderer graphicsContext1)
         {
             while (UploadQueue.TryDequeue(out var upload))
             {
@@ -164,12 +164,12 @@ namespace Engine.ResourcesManage
             Device.Dispose();
         }
 
-        void DisposeDictionaryItems<T1, T2>(Dictionary<T1, T2> dict) where T2 : IDisposable
+        void DisposeDictionaryItems<T1, T2>(Dictionary<T1, T2> dictionary) where T2 : IDisposable
         {
-            foreach (var pair in dict)
+            foreach (var pair in dictionary)
                 pair.Value.Dispose();
 
-            dict.Clear();
+            dictionary.Clear();
         }
     }
 }

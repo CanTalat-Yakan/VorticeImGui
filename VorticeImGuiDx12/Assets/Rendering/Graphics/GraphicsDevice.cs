@@ -226,9 +226,9 @@ public sealed partial class GraphicsDevice : IDisposable
         ExecuteCount++;
     }
 
-    public void SetupSwapChain(IntPtr hwnd)
+    public void SetupSwapChain(nint hwnd)
     {
-        this.WindowHandle = hwnd;
+        WindowHandle = hwnd;
     }
 
     public void Resize(int width, int height)

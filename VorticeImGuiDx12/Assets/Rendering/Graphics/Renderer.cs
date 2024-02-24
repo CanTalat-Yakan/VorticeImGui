@@ -8,8 +8,16 @@ using Vortice.Mathematics;
 
 namespace Engine.Graphics;
 
-public sealed partial class GraphicsContext : IDisposable
+public sealed partial class Renderer : IDisposable
 {
+    public ID3D12GraphicsCommandList5 CommandList;
+    public GraphicsDevice GraphicsDevice;
+
+    public RootSignature CurrentRootSignature;
+    public PipelineStateObject PipelineStateObject;
+    public PipelineStateObjectDescription PipelineStateObjectDescription;
+    public UnnamedInputLayout UnnamedInputLayout;
+
     public void Initialize(GraphicsDevice graphicsDevice)
     {
         ThrowIfFailed(graphicsDevice.Device.CreateCommandList(0, CommandListType.Direct, graphicsDevice.GetCommandAllocator(), null, out CommandList));
@@ -18,6 +26,21 @@ public sealed partial class GraphicsContext : IDisposable
         GraphicsDevice = graphicsDevice;
     }
 
+    private void ThrowIfFailed(Result result)
+    {
+        if (result.Failure)
+            throw new NotImplementedException();
+    }
+
+    public void Dispose()
+    {
+        CommandList?.Dispose();
+        CommandList = null;
+    }
+}
+
+public sealed partial class Renderer : IDisposable
+{
     public void DrawIndexedInstanced(int indexCountPerInstance, int instanceCount, int startIndexLocation, int baseVertexLocation, int startInstanceLocation)
     {
         CommandList.SetPipelineState(PipelineStateObject.GetState(GraphicsDevice, PipelineStateObjectDescription, CurrentRootSignature, UnnamedInputLayout));
@@ -124,6 +147,7 @@ public sealed partial class GraphicsContext : IDisposable
             ResourceDescription.Buffer((ulong)data.Length),
             ResourceStates.GenericRead);
         GraphicsDevice.DestroyResource(resourceUpload1);
+
         GraphicsDevice.DestroyResource(texture.Resource);
         texture.Resource = GraphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
             HeapProperties.DefaultHeapProperties,
@@ -132,28 +156,34 @@ public sealed partial class GraphicsContext : IDisposable
             ResourceStates.CopyDest);
 
         uint bitsPerPixel = GraphicsDevice.BitsPerPixel(texture.Format);
+
         int width = texture.Width;
         int height = texture.Height;
+
+        SubresourceData subresourcedata = new()
+        {
+            Data = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0),
+            RowPitch = (IntPtr)(width * bitsPerPixel / 8),
+            SlicePitch = (IntPtr)(width * height * bitsPerPixel / 8),
+        };
+        UpdateSubresources(CommandList, texture.Resource, resourceUpload1, 0, 0, 1, [subresourcedata]);
+
         GCHandle gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned);
-        SubresourceData subresourcedata = new SubresourceData();
-        subresourcedata.Data = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0);
-        subresourcedata.RowPitch = (IntPtr)(width * bitsPerPixel / 8);
-        subresourcedata.SlicePitch = (IntPtr)(width * height * bitsPerPixel / 8);
-        UpdateSubresources(CommandList, texture.Resource, resourceUpload1, 0, 0, 1, new SubresourceData[] { subresourcedata });
         gcHandle.Free();
+
         CommandList.ResourceBarrierTransition(texture.Resource, ResourceStates.CopyDest, ResourceStates.GenericRead);
         texture.ResourceStates = ResourceStates.GenericRead;
     }
 
-    public void SetCBV(UploadBuffer uploadBuffer, int offset, int slot)
+    public void SetConstantBufferView(UploadBuffer uploadBuffer, int offset, int slot)
     {
         CommandList.SetGraphicsRootConstantBufferView(CurrentRootSignature.ConstantBufferView[slot], uploadBuffer.resource.GPUVirtualAddress + (ulong)offset);
     }
 
     public void SetPipelineState(PipelineStateObject pipelineStateObject, PipelineStateObjectDescription psoDesc)
     {
-        this.PipelineStateObject = pipelineStateObject;
-        this.PipelineStateObjectDescription = psoDesc;
+        PipelineStateObject = pipelineStateObject;
+        PipelineStateObjectDescription = psoDesc;
     }
 
     public void ClearRenderTarget(Texture2D texture2D)
@@ -192,7 +222,7 @@ public sealed partial class GraphicsContext : IDisposable
     }
 }
 
-public sealed partial class GraphicsContext : IDisposable
+public sealed partial class Renderer : IDisposable
 {
     private unsafe struct D3D12MemoryCopyDestination
     {
@@ -201,7 +231,7 @@ public sealed partial class GraphicsContext : IDisposable
         public ulong SlicePitch;
     }
 
-    private unsafe void MemcpySubresource(
+    private unsafe void MemoryCopySubresource(
         D3D12MemoryCopyDestination* destination,
         SubresourceData source,
         int rowSizeInBytes,
@@ -259,7 +289,7 @@ public sealed partial class GraphicsContext : IDisposable
                 RowPitch = (ulong)layouts[i].Footprint.RowPitch,
                 SlicePitch = (uint)(layouts[i].Footprint.RowPitch) * (uint)(numberOfRows[i])
             };
-            MemcpySubresource(&destinationData, sourceData[i], (int)(rowSizesInBytes[i]), numberOfRows[i], layouts[i].Footprint.Depth);
+            MemoryCopySubresource(&destinationData, sourceData[i], (int)(rowSizesInBytes[i]), numberOfRows[i], layouts[i].Footprint.Depth);
         }
         intermediate.Unmap(0, null);
 
@@ -302,25 +332,5 @@ public sealed partial class GraphicsContext : IDisposable
 
         ulong Result = UpdateSubresources(pCmdList, pDestinationResource, pIntermediate, FirstSubresource, NumSubresources, RequiredSize, pLayouts, pNumRows, pRowSizesInBytes, pSrcData);
         return Result;
-    }
-
-    public ID3D12GraphicsCommandList5 CommandList;
-    public GraphicsDevice GraphicsDevice;
-
-    private void ThrowIfFailed(Result result)
-    {
-        if (result.Failure)
-            throw new NotImplementedException();
-    }
-
-    public RootSignature CurrentRootSignature;
-    public PipelineStateObject PipelineStateObject;
-    public PipelineStateObjectDescription PipelineStateObjectDescription;
-    public UnnamedInputLayout UnnamedInputLayout;
-
-    public void Dispose()
-    {
-        CommandList?.Dispose();
-        CommandList = null;
     }
 }

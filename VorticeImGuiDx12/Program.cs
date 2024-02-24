@@ -4,7 +4,7 @@ using ImGuiNET;
 using Vortice.Mathematics;
 
 using Engine.GUI;
-using Engine.ResourcesManage;
+using Engine.Rendering;
 
 namespace Engine;
 
@@ -30,7 +30,7 @@ public sealed partial class Program
 
 public sealed partial class Program
 {
-    CommonContext _context = new();
+    Core _context = new();
     GUIRender _imGuiRender = new();
     DateTime _current;
 

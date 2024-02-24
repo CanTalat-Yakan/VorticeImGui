@@ -5,7 +5,7 @@ using ImGuiNET;
 using Vortice.Direct3D12;
 using Vortice.DXGI;
 
-using Engine.ResourcesManage;
+using Engine.Rendering;
 using Engine.Graphics;
 
 using ImDrawIdx = System.UInt16;
@@ -14,7 +14,7 @@ namespace Engine.GUI
 {
     unsafe public class GUIRender
     {
-        public CommonContext Context;
+        public Core Context;
 
         public InputLayoutDescription InputLayoutDescription;
 
@@ -35,12 +35,14 @@ namespace Engine.GUI
         {
             Context.ImGuiContext = ImGui.CreateContext();
             ImGui.SetCurrentContext(Context.ImGuiContext);
+
             var io = ImGui.GetIO();
             io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
+
             FontTexture = new Texture2D();
             Context.RenderTargets["ImGui Font"] = FontTexture;
 
-            ImFontPtr font = io.Fonts.AddFontFromFileTTF("c:\\Windows\\Fonts\\SIMHEI.ttf", 14, null, io.Fonts.GetGlyphRangesChineseFull());
+            //ImFontPtr font = io.Fonts.AddFontFromFileTTF("c:\\Windows\\Fonts\\SIMHEI.ttf", 14, null, io.Fonts.GetGlyphRangesChineseFull());
 
             io.Fonts.GetTexDataAsRGBA32(out byte* pixels, out int width, out int height, out int bytesPerPixel);
             io.Fonts.TexID = Context.GetStringID("ImGui Font");
@@ -68,7 +70,7 @@ namespace Engine.GUI
             ImGui.Render();
 
             var data = ImGui.GetDrawData();
-            GraphicsContext graphicsContext = Context.GraphicsContext;
+            Renderer graphicsContext = Context.GraphicsContext;
 
             float L = data.DisplayPos.X;
             float R = data.DisplayPos.X + data.DisplaySize.X;
@@ -87,15 +89,17 @@ namespace Engine.GUI
             Context.UploadBuffer.SetCBV(graphicsContext, index1, 0);
             graphicsContext.CommandList.IASetPrimitiveTopology(Vortice.Direct3D.PrimitiveTopology.TriangleList);
 
-            Vector2 clip_off = data.DisplayPos;
+            Vector2 clipOffset = data.DisplayPos;
             for (int i = 0; i < data.CmdListsCount; i++)
             {
                 var cmdList = data.CmdListsRange[i];
+
                 var vertBytes = cmdList.VtxBuffer.Size * sizeof(ImDrawVert);
                 var indexBytes = cmdList.IdxBuffer.Size * sizeof(ImDrawIdx);
 
                 Context.UploadBuffer.UploadMeshIndex(graphicsContext, ImGuiMesh, new Span<byte>(cmdList.IdxBuffer.Data.ToPointer(), indexBytes), Format.R16_UInt);
                 Context.UploadBuffer.UploadVertexBuffer(graphicsContext,ref ImGuiMesh.Vertex, new Span<byte>(cmdList.VtxBuffer.Data.ToPointer(), vertBytes));
+
                 ImGuiMesh.Vertices["POSITION"] = new VertexBuffer() { offset = 0, resource = ImGuiMesh.Vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
                 ImGuiMesh.Vertices["TEXCOORD"] = new VertexBuffer() { offset = 8, resource = ImGuiMesh.Vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
                 ImGuiMesh.Vertices["COLOR"] = new VertexBuffer() { offset = 16, resource = ImGuiMesh.Vertex, sizeInByte = vertBytes, stride = sizeof(ImDrawVert) };
@@ -111,7 +115,7 @@ namespace Engine.GUI
                     else
                     {
                         graphicsContext.SetShaderResourceView(Context.GetTextureByStringID(cmd.TextureId), 0);
-                        var rect = new Vortice.RawRect((int)(cmd.ClipRect.X - clip_off.X), (int)(cmd.ClipRect.Y - clip_off.Y), (int)(cmd.ClipRect.Z - clip_off.X), (int)(cmd.ClipRect.W - clip_off.Y));
+                        var rect = new Vortice.RawRect((int)(cmd.ClipRect.X - clipOffset.X), (int)(cmd.ClipRect.Y - clipOffset.Y), (int)(cmd.ClipRect.Z - clipOffset.X), (int)(cmd.ClipRect.W - clipOffset.Y));
                         graphicsContext.CommandList.RSSetScissorRects(new[] { rect });
 
                         graphicsContext.DrawIndexedInstanced((int)cmd.ElemCount, 1, (int)(cmd.IdxOffset), (int)(cmd.VtxOffset), 0);

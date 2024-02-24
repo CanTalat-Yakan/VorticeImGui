@@ -45,10 +45,10 @@ public unsafe class RingUploadBuffer : UploadBuffer
         return ofs;
     }
 
-    public void SetCBV(GraphicsContext graphicsContext, int offset, int slot) =>
-        graphicsContext.SetCBV(this, offset, slot);
+    public void SetCBV(Renderer graphicsContext, int offset, int slot) =>
+        graphicsContext.SetConstantBufferView(this, offset, slot);
 
-    public void UploadMeshIndex(GraphicsContext context, Mesh mesh, Span<byte> index, Format indexFormat)
+    public void UploadMeshIndex(Renderer context, Mesh mesh, Span<byte> index, Format indexFormat)
     {
         var graphicsDevice = context.GraphicsDevice;
         var commandList = context.CommandList;
@@ -76,7 +76,7 @@ public unsafe class RingUploadBuffer : UploadBuffer
         commandList.ResourceBarrierTransition(mesh.Index, ResourceStates.CopyDest, ResourceStates.GenericRead);
     }
 
-    public void UploadVertexBuffer(GraphicsContext context, ref ID3D12Resource resource1, Span<byte> vertex)
+    public void UploadVertexBuffer(Renderer context, ref ID3D12Resource resource1, Span<byte> vertex)
     {
         var graphicsDevice = context.GraphicsDevice;
         var commandList = context.CommandList;
