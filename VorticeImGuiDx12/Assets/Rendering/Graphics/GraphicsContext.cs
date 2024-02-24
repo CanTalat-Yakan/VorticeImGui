@@ -150,7 +150,7 @@ public sealed partial class GraphicsContext : IDisposable
             ResourceDescription.Texture2D(texture.Format, (uint)texture.Width, (uint)texture.Height, 1, 1),
             ResourceStates.CopyDest);
 
-        uint bitsPerPixel = GraphicsDevice.BitsPerPixel(texture.Format);
+        uint bitsPerPixel = GraphicsDevice.GetBitsPerPixel(texture.Format);
 
         int width = texture.Width;
         int height = texture.Height;
