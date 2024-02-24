@@ -68,6 +68,7 @@ public unsafe class RingUploadBuffer : UploadBuffer
             mesh.IndexFormat = indexFormat;
             mesh.IndexCount = index.Length / (indexFormat == Format.R32_UInt ? 4 : 2);
             mesh.IndexSizeInByte = index.Length;
+
             graphicsDevice.DestroyResource(mesh.Index);
 
             mesh.Index = graphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
@@ -88,7 +89,6 @@ public unsafe class RingUploadBuffer : UploadBuffer
         var graphicsDevice = context.GraphicsDevice;
         var commandList = context.CommandList;
 
-        int uploadOffset = Upload(vertex);
         graphicsDevice.DestroyResource(resource);
         resource = graphicsDevice.Device.CreateCommittedResource<ID3D12Resource>(
             HeapProperties.DefaultHeapProperties,
@@ -96,6 +96,7 @@ public unsafe class RingUploadBuffer : UploadBuffer
             ResourceDescription.Buffer((ulong)vertex.Length),
             ResourceStates.CopyDest);
 
+        int uploadOffset = Upload(vertex);
         commandList.CopyBufferRegion(resource, 0, Resource, (ulong)uploadOffset, (ulong)vertex.Length);
         commandList.ResourceBarrierTransition(resource, ResourceStates.CopyDest, ResourceStates.GenericRead);
     }
