@@ -8,8 +8,7 @@ public sealed class Profiler
     public static int FPS => Time.FPS;
     public static double Delta => Time.Delta;
 
-    public static double ViewportSizeWidth => Kernel.Instance.Context.GraphicsDevice.Size.Width;
-    public static double ViewportSizeHeight => Kernel.Instance.Context.GraphicsDevice.Size.Height;
+    public static Vector2 ViewportSize => Kernel.Instance.Context.GraphicsDevice.Size.ToVector2();
 
     public static float DrawCalls { get; set; }
     public static float Vertices { get; set; }
@@ -61,7 +60,7 @@ public sealed class Profiler
         Vertices: {Vertices}
         Triangles: {Indices / 3}
 
-        Resolution: {ViewportSizeWidth + "x" + ViewportSizeHeight}
+        Resolution: {ViewportSize.X + "x" + ViewportSize.Y}
         """;
 
     public static string GetAdditionalString() =>
