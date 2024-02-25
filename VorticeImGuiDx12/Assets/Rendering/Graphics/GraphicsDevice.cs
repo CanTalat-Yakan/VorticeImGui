@@ -10,25 +10,23 @@ namespace Engine.Graphics;
 
 public sealed partial class GraphicsDevice : IDisposable
 {
-    public SizeI Size => NativeSize;
+    public SizeI Size => NativeSize.Scale(Kernel.Instance.Config.ResolutionScale);
     public SizeI NativeSize { get; private set; }
 
     public ID3D12Device2 Device;
     public IDXGIFactory7 Factory;
     public IDXGIAdapter Adapter;
 
+    public IDXGISwapChain3 SwapChain;
     public ID3D12CommandQueue CommandQueue;
+    public List<ID3D12CommandAllocator> CommandAllocators;
+
+    public ID3D12Fence Fence;
+    public EventWaitHandle WaitHandle;
 
     public DescriptorHeapX ShaderResourcesHeap = new();
     public DescriptorHeapX DepthStencilViewHeap = new();
     public DescriptorHeapX RenderTextureViewHeap = new();
-
-    public IDXGISwapChain3 SwapChain;
-
-    public List<ID3D12CommandAllocator> CommandAllocators;
-
-    public EventWaitHandle WaitHandle;
-    public ID3D12Fence Fence;
 
     public struct ResourceDelayDestroy(ID3D12Object resource, ulong destroyFrame)
     {

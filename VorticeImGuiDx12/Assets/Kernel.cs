@@ -10,6 +10,7 @@ global using Engine.Framework;
 global using Engine.Graphics;
 global using Engine.GUI;
 global using Engine.Helper;
+global using Engine.Utilities;
 
 namespace Engine;
 
@@ -28,8 +29,6 @@ public sealed class Kernel
     public GUIRenderer GUIRenderer;
     public GUIInputHandler GUIInputHandler;
     public IntPtr GUIContext;
-
-    public DateTime Current;
 
     public Kernel(Config config) =>
         Config = config;
@@ -96,16 +95,13 @@ public sealed class Kernel
     public void RenderGUI()
     {
         ImGui.SetCurrentContext(GUIContext);
-        ImGui.GetIO().DisplaySize = new Vector2(
+        ImGui.GetIO().DisplaySize = new Vector2( 
             Context.GraphicsDevice.Size.Width, 
             Context.GraphicsDevice.Size.Height);
 
         ImGui.NewFrame();
 
-        var previous = Current;
-        Current = DateTime.Now;
-        float delta = (float)(Current - previous).TotalSeconds;
-        ImGui.GetIO().DeltaTime = delta;
+        ImGui.GetIO().DeltaTime = Time.DeltaF;
 
         OnGUI?.Invoke();
 
