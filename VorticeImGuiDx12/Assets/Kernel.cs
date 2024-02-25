@@ -44,6 +44,7 @@ public sealed class Kernel
 
         Context.GraphicsDevice.Initialize(size, win32Window);
         Context.UploadBuffer.Initialize(Context.GraphicsDevice, 67108864); // 64 MB.
+        Context.GraphicsContext.Initialize(Context.GraphicsDevice);
 
         if (Config.GUI)
         {
@@ -55,8 +56,6 @@ public sealed class Kernel
 
             GUIInputHandler = new(hwnd);
         }
-
-        Context.GraphicsContext.Initialize(Context.GraphicsDevice);
     }
 
     public void Frame()
@@ -68,7 +67,6 @@ public sealed class Kernel
         OnInitialize = null;
 
         Context.GraphicsDevice.Begin();
-
         Context.GraphicsContext.BeginCommand();
 
         Context.GPUUploadData(Context.GraphicsContext);
