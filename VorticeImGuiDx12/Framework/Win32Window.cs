@@ -8,6 +8,8 @@ namespace Engine.Framework;
 
 public class Win32Window
 {
+    public Vortice.Mathematics.SizeI Size => new(Width, Height);
+
     public string Title;
     public int Width;
     public int Height;

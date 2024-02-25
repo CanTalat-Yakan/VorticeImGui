@@ -30,15 +30,17 @@ public sealed class Kernel
     public GUIInputHandler GUIInputHandler;
     public IntPtr GUIContext;
 
-    public Kernel(Config config) =>
+    public Kernel(Config config)
+    {
         Config = config;
 
-    public void Initialize(CommonContext context)
+        Context = new CommonContext(this);
+    }
+
+    public void Initialize(IntPtr hwnd, Vortice.Mathematics.SizeI size, bool win32Window)
     {
         // Set the singleton instance of the class, if it hasn't been already.
         Instance ??= this;
-
-        Context = context;
 
         if (Config.GUI)
         {
@@ -48,13 +50,13 @@ public sealed class Kernel
             GUIRenderer.LoadDefaultResource();
         }
 
-        Context.GraphicsDevice.Initialize(true);
+        Context.GraphicsDevice.Initialize(size, win32Window);
         Context.UploadBuffer.Initialize(Context.GraphicsDevice, 67108864); // 64 MB.
 
         if (Config.GUI)
         {
             GUIRenderer.Initialize();
-            GUIInputHandler = new();
+            GUIInputHandler = new(hwnd);
         }
 
         Context.GraphicsContext.Initialize(Context.GraphicsDevice);

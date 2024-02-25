@@ -44,20 +44,16 @@ public sealed partial class GraphicsDevice : IDisposable
 
     public int BufferCount = 3;
 
-    public Config Config = new();
-
-    public void Initialize(bool forHwnd)
+    public void Initialize(SizeI size, bool win32Window)
     {
-        NativeSize = new SizeI(
-            AppWindow.Win32Window.Width,
-            AppWindow.Win32Window.Height);
+        NativeSize = size;
 
         CreateDevice();
         CreateGraphicsQueue();
         CreateDescriptorHeaps();
         CreateFence();
         CreateCommandAllocator();
-        CreateSwapChain(forHwnd);
+        CreateSwapChain(win32Window);
 
         ExecuteCount++;
     }

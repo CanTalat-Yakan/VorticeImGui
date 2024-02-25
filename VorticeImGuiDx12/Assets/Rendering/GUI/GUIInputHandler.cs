@@ -10,11 +10,11 @@ public sealed class GUIInputHandler
 
     private ImGuiMouseCursor _lastCursor;
 
-    public GUIInputHandler()
+    public GUIInputHandler(IntPtr hwnd)
     {
         Instance = this;
 
-        WindowHandle = AppWindow.Win32Window.Handle;
+        WindowHandle = hwnd;
 
         InitKeyMap();
     }
