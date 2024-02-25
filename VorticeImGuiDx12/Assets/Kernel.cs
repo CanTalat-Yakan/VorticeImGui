@@ -42,20 +42,17 @@ public sealed class Kernel
         // Set the singleton instance of the class, if it hasn't been already.
         Instance ??= this;
 
+        Context.GraphicsDevice.Initialize(size, win32Window);
+        Context.UploadBuffer.Initialize(Context.GraphicsDevice, 67108864); // 64 MB.
+
         if (Config.GUI)
         {
             GUIRenderer = new();
             GUIRenderer.Context = Context;
 
             GUIRenderer.LoadDefaultResource();
-        }
-
-        Context.GraphicsDevice.Initialize(size, win32Window);
-        Context.UploadBuffer.Initialize(Context.GraphicsDevice, 67108864); // 64 MB.
-
-        if (Config.GUI)
-        {
             GUIRenderer.Initialize();
+
             GUIInputHandler = new(hwnd);
         }
 
