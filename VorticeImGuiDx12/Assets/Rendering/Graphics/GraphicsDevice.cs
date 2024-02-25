@@ -215,6 +215,7 @@ public sealed partial class GraphicsDevice : IDisposable
     private void CreateFence()
     {
         WaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+
         Device.CreateFence(ExecuteCount, FenceFlags.None, out Fence).ThrowIfFailed();
         Fence.Name = "Fence";
     }
@@ -384,8 +385,8 @@ public sealed partial class GraphicsDevice : IDisposable
                  HeapFlags.None,
                  resourceDescription,
                  ResourceStates.GenericRead,
-                 new ClearValue(texture.DepthStencilViewFormat, new DepthStencilValue(1.0f, 0)), out texture.Resource)
-            .ThrowIfFailed();
+                 new ClearValue(texture.DepthStencilViewFormat, new DepthStencilValue(1.0f, 0)),
+                 out texture.Resource).ThrowIfFailed();
 
             if (texture.DepthStencilView is null)
             {
@@ -410,8 +411,8 @@ public sealed partial class GraphicsDevice : IDisposable
                  HeapFlags.None,
                  resourceDescription,
                  ResourceStates.GenericRead,
-                 new ClearValue(texture.DepthStencilViewFormat, new Color4(0, 0, 0, 0)), out texture.Resource)
-                .ThrowIfFailed();
+                 new ClearValue(texture.DepthStencilViewFormat, new Color4(0, 0, 0, 0)),
+                 out texture.Resource).ThrowIfFailed();
 
             if (texture.RenderTargetView is null)
             {
