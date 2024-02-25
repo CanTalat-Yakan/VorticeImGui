@@ -58,6 +58,16 @@ public unsafe sealed partial class GUIRenderer
         Context.UploadQueue.Enqueue(gpuUpload);
     }
 
+    public void Update(IntPtr context)
+    {
+        ImGui.SetCurrentContext(context);
+        ImGui.GetIO().DisplaySize = Context.GraphicsDevice.Size.ToVector2();
+
+        ImGui.NewFrame();
+
+        ImGui.GetIO().DeltaTime = Time.DeltaF;
+    }
+
     public void Render()
     {
         ImGui.ShowDemoWindow();

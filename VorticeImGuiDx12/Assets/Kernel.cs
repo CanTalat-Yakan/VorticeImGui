@@ -94,16 +94,10 @@ public sealed class Kernel
 
     public void RenderGUI()
     {
-        ImGui.SetCurrentContext(GUIContext); 
-        ImGui.GetIO().DisplaySize = Context.GraphicsDevice.Size.ToVector2();
-
-        ImGui.NewFrame();
-
-        ImGui.GetIO().DeltaTime = Time.DeltaF;
+        GUIRenderer.Update(GUIContext);
+        GUIInputHandler.Update();
 
         OnGUI?.Invoke();
-
-        GUIInputHandler.Update();
 
         GUIRenderer.Render();
     }
