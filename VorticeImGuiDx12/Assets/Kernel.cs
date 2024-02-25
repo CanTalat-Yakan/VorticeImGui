@@ -94,10 +94,8 @@ public sealed class Kernel
 
     public void RenderGUI()
     {
-        ImGui.SetCurrentContext(GUIContext);
-        ImGui.GetIO().DisplaySize = new Vector2( 
-            Context.GraphicsDevice.Size.Width, 
-            Context.GraphicsDevice.Size.Height);
+        ImGui.SetCurrentContext(GUIContext); 
+        ImGui.GetIO().DisplaySize = Context.GraphicsDevice.Size.ToVector2();
 
         ImGui.NewFrame();
 
