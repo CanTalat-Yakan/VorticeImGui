@@ -69,24 +69,23 @@ public sealed class Kernel
 
         Context.GraphicsDevice.Begin();
 
-        var graphicsContext = Context.GraphicsContext;
-        graphicsContext.BeginCommand();
+        Context.GraphicsContext.BeginCommand();
 
-        Context.GPUUploadData(graphicsContext);
+        Context.GPUUploadData(Context.GraphicsContext);
 
-        graphicsContext.SetDescriptorHeapDefault();
-        graphicsContext.ScreenBeginRender();
-        graphicsContext.SetRenderTargetScreen();
-        graphicsContext.ClearRenderTargetScreen();
+        Context.GraphicsContext.SetDescriptorHeapDefault();
+        Context.GraphicsContext.ScreenBeginRender();
+        Context.GraphicsContext.SetRenderTargetScreen();
+        Context.GraphicsContext.ClearRenderTargetScreen();
 
         OnRender?.Invoke();
 
         if (Config.GUI)
             RenderGUI();
 
-        graphicsContext.ScreenEndRender();
-        graphicsContext.EndCommand();
-        graphicsContext.Execute();
+        Context.GraphicsContext.ScreenEndRender();
+        Context.GraphicsContext.EndCommand();
+        Context.GraphicsContext.Execute();
 
         Context.GraphicsDevice.Present((int)Config.VSync);
     }
