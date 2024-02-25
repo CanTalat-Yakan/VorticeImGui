@@ -14,9 +14,6 @@ public sealed partial class AppWindow
     public delegate void ResizeEventHandler(int width, int height);
     public static event ResizeEventHandler ResizeEvent;
 
-    private string _profiler = string.Empty;
-    private string _output = string.Empty;
-
     public AppWindow(WindowData windowData)
     {
         CreateWindowClass(out var windowClass);

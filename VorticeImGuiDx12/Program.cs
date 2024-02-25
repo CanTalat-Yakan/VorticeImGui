@@ -11,6 +11,19 @@ public sealed class Program
 
     public void Run(bool renderGUI = true, Config config = null)
     {
+        HandleExceptions();
+
+        // Instantiate Window and Engine.
+        Initialize(renderGUI, ref config);
+
+        // Create a while loop for the game logic
+        // and dispose on window quit request.
+        AppWindow.Looping(Kernel.Frame);
+        AppWindow.Dispose(Kernel.Dispose);
+    }
+
+    private void Initialize(bool renderGUI, ref Config config)
+    {
         config ??= Config.GetDefault();
         config.GUI = renderGUI;
 
@@ -21,8 +34,21 @@ public sealed class Program
         Kernel.Initialize(new CommonContext(Kernel));
 
         AppWindow.ResizeEvent += Kernel.Context.GraphicsDevice.Resize;
+    }
 
-        AppWindow.Looping(Kernel.Frame);
-        AppWindow.Dispose(Kernel.Dispose);
+    private static void HandleExceptions()
+    {
+        var rootPath = AppContext.BaseDirectory;
+        var logFilePath = rootPath + "Application.log";
+
+        ExceptionHandler.CreateTraceLog(rootPath, logFilePath);
+
+        AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+        {
+            // This method will be called when an unhandled exception occurs.
+            var exception = e.ExceptionObject as Exception;
+            if (exception is not null)
+                ExceptionHandler.HandleException(exception);
+        };
     }
 }

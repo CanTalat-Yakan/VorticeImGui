@@ -1,4 +1,7 @@
 ﻿using SharpGen.Runtime;
+using System.IO;
+using System.Linq;
+using System.Text;
 using Vortice.Mathematics;
 
 namespace Engine.Helper;
@@ -15,5 +18,89 @@ public static class ExtensionMethods
     {
         if (result.Failure)
             throw new NotImplementedException(result.ToString());
+    }
+
+    public static string SplitFirst(this string text, params char[] separators) =>
+        text.Split(separators).FirstOrDefault();
+
+    public static string SplitLast(this string text, params char[] separators) =>
+        text.Split(separators).Last();
+
+    public static string FirstCharToUpper(this string input) =>
+        string.Concat(input[0].ToString().ToUpper(), input.AsSpan(1));
+
+    public static string RemoveExtension(this string text) =>
+        text.Split('.').FirstOrDefault();
+
+    public static string FormatString(this string text) =>
+        text.SplitLast('_').SplitLast('.').SplitLast('+').FirstCharToUpper().AddSpacesToSentence();
+
+    public static string AddSpacesToSentence(this string text, bool preserveAcronyms = true)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+
+        StringBuilder newText = new StringBuilder(text.Length * 2);
+        newText.Append(text[0]);
+        for (int i = 1; i < text.Length; i++)
+        {
+            if (char.IsUpper(text[i]) || char.IsDigit(text[i]))
+                if (!char.IsDigit(text[i - 1]))
+                    if ((text[i - 1] != ' ' && !char.IsUpper(text[i - 1])) ||
+                    (preserveAcronyms && char.IsUpper(text[i - 1]) &&
+                     i < text.Length - 1 && !char.IsUpper(text[i + 1])))
+                        newText.Append(' ');
+            newText.Append(text[i]);
+        }
+
+        return newText.ToString();
+    }
+
+    public static string IncrementNameIfExists(this string name, string[] list)
+    {
+        var i = 0;
+        bool nameWithoutIncrement = list.Contains(name);
+
+        foreach (var s in list)
+            if (s == name || s.Contains(name + " ("))
+                i++;
+
+        if (i > 0 && nameWithoutIncrement)
+            name += " (" + (i + 1).ToString() + ")";
+
+        return name;
+    }
+
+    public static string IncrementPathIfExists(this string path, string[] list)
+    {
+        var name = Path.GetFileNameWithoutExtension(path);
+
+        name = name.IncrementNameIfExists(list);
+
+        return Path.Combine(Path.GetDirectoryName(path), name + Path.GetExtension(path));
+    }
+
+    public static bool? IsFileLocked(this string path)
+    {
+        if (!File.Exists(path))
+            return null;
+
+        try
+        {
+            FileInfo fileInfo = new FileInfo(path);
+            using (FileStream fileStream = fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.None))
+                fileStream.Close();
+        }
+        catch (IOException)
+        {
+            //the file is unavailable because it is:
+            //still being written to
+            //or being processed by another thread
+            //or does not exist (has already been processed)
+            return true;
+        }
+
+        //file is not locked
+        return false;
     }
 }
